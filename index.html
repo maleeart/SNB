@@ -11,37 +11,328 @@
 <meta name="apple-mobile-web-app-title" content="สนามบาส">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Sarabun', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
-  h1 { font-size: 1.1rem; color: #94a3b8; margin-bottom: 32px; letter-spacing: 0.05em; }
-  .card { background: #1e293b; border-radius: 20px; padding: 28px; width: 100%; max-width: 360px; }
-  .info { font-size: 0.85rem; color: #64748b; margin-bottom: 4px; }
-  .val { font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; }
-  label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; margin-top: 16px; }
-  input, select { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 1rem; font-family: inherit; }
-  .btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 24px; transition: opacity .15s; font-family: inherit; }
-  .btn:active { opacity: 0.75; }
-  .btn-in  { background: #22c55e; color: #fff; }
-  .btn-out { background: #f97316; color: #fff; }
-  .btn-save { background: #3b82f6; color: #fff; font-size: 1rem; padding: 14px; }
-  .time-big { font-size: 3rem; font-weight: 800; color: #22c55e; text-align: center; margin: 8px 0 4px; }
-  .date-sub { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
-  .session-info { background: #0f172a; border-radius: 12px; padding: 14px; margin-top: 16px; }
-  .link { color: #64748b; font-size: 0.75rem; text-align: center; margin-top: 20px; cursor: pointer; }
-  .link:hover { color: #94a3b8; }
-  #toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #fff; padding: 12px 24px; border-radius: 12px; font-weight: 600; opacity: 0; transition: opacity .3s; pointer-events: none; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: #0d0500;
+    color: #f1f5f9;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  canvas#bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(13,5,0,0.55) 0%, rgba(13,5,0,0.85) 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .logo-wrap {
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .logo-wrap img {
+    width: 86px; height: 86px;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 2px solid rgba(232,93,4,0.5);
+    box-shadow: 0 0 24px rgba(232,93,4,0.4), 0 0 60px rgba(232,93,4,0.15);
+  }
+
+  h1 {
+    font-size: 1rem;
+    color: #fb923c;
+    margin-bottom: 24px;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 20px rgba(251,146,60,0.5);
+  }
+
+  .card {
+    background: rgba(20,8,0,0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(232,93,4,0.2);
+    border-radius: 24px;
+    padding: 28px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .info { font-size: 0.82rem; color: #92400e; margin-bottom: 4px; }
+  .val  { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: #fed7aa; }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: #92400e;
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(232,93,4,0.3);
+    background: rgba(0,0,0,0.4);
+    color: #fed7aa;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus { border-color: #e85d04; }
+  select option { background: #1a0700; }
+
+  .btn {
+    width: 100%;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 24px;
+    font-family: inherit;
+    letter-spacing: 0.05em;
+    transition: transform .1s, box-shadow .1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-in {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+  }
+  .btn-in:active { box-shadow: 0 2px 8px rgba(34,197,94,0.3); }
+
+  .btn-out {
+    background: linear-gradient(135deg, #c2410c, #f97316);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(249,115,22,0.45);
+  }
+  .btn-out:active { box-shadow: 0 2px 8px rgba(249,115,22,0.3); }
+
+  .btn-save {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    color: #fff;
+    font-size: 1rem;
+    padding: 14px;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+  }
+
+  .time-big {
+    font-size: 3.2rem;
+    font-weight: 900;
+    color: #fb923c;
+    text-align: center;
+    margin: 8px 0 4px;
+    text-shadow: 0 0 30px rgba(251,146,60,0.6);
+    letter-spacing: 0.04em;
+  }
+
+  .date-sub { text-align: center; color: #78350f; font-size: 0.9rem; margin-bottom: 20px; }
+
+  .session-info {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(232,93,4,0.15);
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 16px;
+  }
+
+  .link {
+    color: #78350f;
+    font-size: 0.75rem;
+    text-align: center;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: color .2s;
+  }
+  .link:hover { color: #fb923c; }
+
+  #toast {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    padding: 13px 28px;
+    border-radius: 14px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
   #toast.show { opacity: 1; }
-  #toast.err { background: #ef4444; }
+  #toast.err  { background: linear-gradient(135deg, #b91c1c, #ef4444); }
+
+  /* ripple on buttons */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    transform: scale(0);
+    animation: ripple-anim .5s linear;
+    pointer-events: none;
+  }
+  @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
 </style>
 </head>
 <body>
-<img src="logo.jpg" style="width:80px;height:80px;border-radius:16px;object-fit:cover;margin-bottom:16px;">
-<h1>บันทึกการใช้งานสนามบาส</h1>
 
-<div class="card" id="app"></div>
+<canvas id="bg"></canvas>
+<div class="overlay"></div>
+
+<div class="content">
+  <div class="logo-wrap">
+    <img src="logo.jpg" alt="logo">
+  </div>
+  <h1>บันทึกการใช้งานสนามบาส</h1>
+  <div class="card" id="app"></div>
+</div>
 
 <div id="toast"></div>
 
 <script>
+/* ── Basketball canvas background ── */
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+
+function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+function drawBall(x, y, r, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // ball body
+  const g = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
+  g.addColorStop(0, '#e85d04');
+  g.addColorStop(0.6, '#c2410c');
+  g.addColorStop(1, '#7c2d12');
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = r * 0.07;
+
+  // horizontal line
+  ctx.beginPath();
+  ctx.moveTo(x - r, y);
+  ctx.lineTo(x + r, y);
+  ctx.stroke();
+
+  // vertical line
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.01, 0, Math.PI * 2); // center dot
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.lineTo(x, y + r);
+  ctx.stroke();
+
+  // left curve
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.2, y - r);
+  ctx.bezierCurveTo(x - r * 0.6, y - r * 0.5, x - r * 0.6, y + r * 0.5, x - r * 0.2, y + r);
+  ctx.stroke();
+
+  // right curve
+  ctx.beginPath();
+  ctx.moveTo(x + r * 0.2, y - r);
+  ctx.bezierCurveTo(x + r * 0.6, y - r * 0.5, x + r * 0.6, y + r * 0.5, x + r * 0.2, y + r);
+  ctx.stroke();
+
+  // clip to circle for clean edges
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.restore();
+}
+
+const balls = Array.from({length: 9}, (_, i) => ({
+  x: Math.random() * innerWidth,
+  y: Math.random() * innerHeight,
+  r: 20 + Math.random() * 45,
+  vx: (Math.random() - 0.5) * 0.5,
+  vy: (Math.random() - 0.5) * 0.5,
+  rot: Math.random() * Math.PI * 2,
+  vrot: (Math.random() - 0.5) * 0.01,
+  alpha: 0.06 + Math.random() * 0.1,
+}));
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const b of balls) {
+    b.x += b.vx;
+    b.y += b.vy;
+    b.rot += b.vrot;
+    if (b.x < -b.r) b.x = canvas.width + b.r;
+    if (b.x > canvas.width + b.r) b.x = -b.r;
+    if (b.y < -b.r) b.y = canvas.height + b.r;
+    if (b.y > canvas.height + b.r) b.y = -b.r;
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.rot);
+    ctx.translate(-b.x, -b.y);
+    drawBall(b.x, b.y, b.r, b.alpha);
+    ctx.restore();
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* ── Ripple effect ── */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  btn.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+});
+
+/* ── App logic ── */
 const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf8rkeKjetfqxsfN7xwrMqtLoQDMCvuXR1utfMWjMaf3WMzZQ/formResponse';
 const DEPTS = ['ส่วนกลาง ชธธ.','อบค.','อบฟ.','อบย.','อคม.','อรอ.','อหข.','อปล.','อื่นๆ'];
 
@@ -88,9 +379,7 @@ function render() {
   const app = document.getElementById('app');
   const profile = getProfile();
   const session = getSession();
-
   if (!profile) { renderSetup(app); return; }
-
   if (!session) { renderCheckIn(app, profile); }
   else { renderCheckOut(app, profile, session); }
 }
@@ -118,15 +407,14 @@ function doSaveProfile() {
 function renderCheckIn(app, profile) {
   const t = now();
   app.innerHTML = `
-    <div class="info">สวัสดี</div>
+    <div class="info">สวัสดี 👋</div>
     <div class="val">${profile.name}</div>
     <div class="info">สังกัด ${profile.dept}</div>
     <div class="time-big" id="clock">${fmtTime(t)}</div>
     <div class="date-sub">${fmtDate(t)}</div>
-    <button class="btn btn-in" onclick="doCheckIn()">เข้าสนาม</button>
+    <button class="btn btn-in" onclick="doCheckIn()">🏀 เข้าสนาม</button>
     <div class="link" onclick="resetProfile()">เปลี่ยนชื่อ / สังกัด</div>
   `;
-  // live clock
   const iv = setInterval(() => {
     const el = document.getElementById('clock');
     if (!el) { clearInterval(iv); return; }
@@ -135,22 +423,21 @@ function renderCheckIn(app, profile) {
 }
 
 function doCheckIn() {
-  const d = now();
-  saveSession({ ts: d.toISOString() });
+  saveSession({ ts: now().toISOString() });
   render();
 }
 
 function renderCheckOut(app, profile, session) {
   const entryTime = new Date(session.ts);
   app.innerHTML = `
-    <div class="info">สวัสดี</div>
+    <div class="info">สวัสดี 👋</div>
     <div class="val">${profile.name}</div>
     <div class="session-info">
       <div class="info">เข้าสนามเมื่อ</div>
-      <div class="val" style="color:#22c55e;font-size:1.5rem">${fmtTime(entryTime)}</div>
+      <div class="val" style="color:#4ade80;font-size:1.5rem">${fmtTime(entryTime)}</div>
       <div class="info">${fmtDate(entryTime)}</div>
     </div>
-    <button class="btn btn-out" onclick="doCheckOut()">ออกจากสนาม</button>
+    <button class="btn btn-out" onclick="doCheckOut()">🚪 ออกจากสนาม</button>
     <div class="link" onclick="doCancel()">ยกเลิก (ลืมกดออก)</div>
   `;
 }
@@ -160,33 +447,22 @@ async function doCheckOut() {
   const session = getSession();
   const entryTime = new Date(session.ts);
   const exitTime = now();
-
   const btn = document.querySelector('.btn-out');
   btn.textContent = 'กำลังบันทึก...';
   btn.disabled = true;
-
   const ok = await submitForm(profile, entryTime, entryTime, exitTime);
   clearSession();
-
   if (ok) toast('บันทึกเรียบร้อย ✓');
   else toast('ส่งไม่ได้ ลองใหม่', true);
-
   setTimeout(render, 1500);
 }
 
 function doCancel() {
-  if (confirm('ยืนยันยกเลิกการเข้าสนามครั้งนี้?')) {
-    clearSession();
-    render();
-  }
+  if (confirm('ยืนยันยกเลิกการเข้าสนามครั้งนี้?')) { clearSession(); render(); }
 }
 
 function resetProfile() {
-  if (confirm('รีเซ็ตชื่อและสังกัด?')) {
-    clearSession();
-    localStorage.removeItem('profile');
-    render();
-  }
+  if (confirm('รีเซ็ตชื่อและสังกัด?')) { clearSession(); localStorage.removeItem('profile'); render(); }
 }
 
 render();
