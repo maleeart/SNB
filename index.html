@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>สนามบาส</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  h1 { font-size: 1.1rem; color: #94a3b8; margin-bottom: 32px; letter-spacing: 0.05em; }
+  .card { background: #1e293b; border-radius: 20px; padding: 28px; width: 100%; max-width: 360px; }
+  .info { font-size: 0.85rem; color: #64748b; margin-bottom: 4px; }
+  .val { font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; }
+  label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; margin-top: 16px; }
+  input, select { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 1rem; font-family: inherit; }
+  .btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 24px; transition: opacity .15s; font-family: inherit; }
+  .btn:active { opacity: 0.75; }
+  .btn-in  { background: #22c55e; color: #fff; }
+  .btn-out { background: #f97316; color: #fff; }
+  .btn-save { background: #3b82f6; color: #fff; font-size: 1rem; padding: 14px; }
+  .time-big { font-size: 3rem; font-weight: 800; color: #22c55e; text-align: center; margin: 8px 0 4px; }
+  .date-sub { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
+  .session-info { background: #0f172a; border-radius: 12px; padding: 14px; margin-top: 16px; }
+  .link { color: #64748b; font-size: 0.75rem; text-align: center; margin-top: 20px; cursor: pointer; }
+  .link:hover { color: #94a3b8; }
+  #toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #fff; padding: 12px 24px; border-radius: 12px; font-weight: 600; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  #toast.err { background: #ef4444; }
+</style>
+</head>
+<body>
+<h1>🏀 บันทึกการใช้งานสนามบาส</h1>
+
+<div class="card" id="app"></div>
+
+<div id="toast"></div>
+
+<script>
+const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf8rkeKjetfqxsfN7xwrMqtLoQDMCvuXR1utfMWjMaf3WMzZQ/formResponse';
+const DEPTS = ['ส่วนกลาง ชธธ.','อบค.','อบฟ.','อบย.','อคม.','อรอ.','อหข.','อปล.','อื่นๆ'];
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function now() { return new Date(); }
+function fmtTime(d) { return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function fmtDate(d) {
+  return `${d.getDate()} ${['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()]} ${d.getFullYear()+543}`;
+}
+
+function getProfile() { return JSON.parse(localStorage.getItem('profile')||'null'); }
+function getSession() { return JSON.parse(localStorage.getItem('session')||'null'); }
+function saveProfile(p) { localStorage.setItem('profile', JSON.stringify(p)); }
+function saveSession(s) { localStorage.setItem('session', JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem('session'); }
+
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (err?' err':'');
+  setTimeout(() => t.className = '', 2500);
+}
+
+async function submitForm(profile, entryDate, entryTime, exitTime) {
+  const d = entryDate;
+  const body = new URLSearchParams({
+    'entry.1168058050': profile.name,
+    'entry.2127435980': profile.dept,
+    'entry.1399129267_year':  d.getFullYear(),
+    'entry.1399129267_month': d.getMonth()+1,
+    'entry.1399129267_day':   d.getDate(),
+    'entry.1137676593_hour':   pad(entryTime.getHours()),
+    'entry.1137676593_minute': pad(entryTime.getMinutes()),
+    'entry.810264308_hour':    pad(exitTime.getHours()),
+    'entry.810264308_minute':  pad(exitTime.getMinutes()),
+  });
+  try {
+    await fetch(FORM_URL, { method:'POST', mode:'no-cors', body });
+    return true;
+  } catch(e) { return false; }
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const profile = getProfile();
+  const session = getSession();
+
+  if (!profile) { renderSetup(app); return; }
+
+  if (!session) { renderCheckIn(app, profile); }
+  else { renderCheckOut(app, profile, session); }
+}
+
+function renderSetup(app) {
+  app.innerHTML = `
+    <div class="info">ตั้งค่าครั้งแรกครั้งเดียว</div>
+    <label>ชื่อ-นามสกุล</label>
+    <input id="iname" placeholder="กรอกชื่อ-นามสกุล" autocomplete="name">
+    <label>สังกัด</label>
+    <select id="idept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select>
+    <button class="btn btn-save" onclick="doSaveProfile()">บันทึกและเริ่มใช้งาน</button>
+  `;
+  document.getElementById('iname').focus();
+}
+
+function doSaveProfile() {
+  const name = document.getElementById('iname').value.trim();
+  const dept = document.getElementById('idept').value;
+  if (!name) { toast('กรอกชื่อก่อนนะ', true); return; }
+  saveProfile({ name, dept });
+  render();
+}
+
+function renderCheckIn(app, profile) {
+  const t = now();
+  app.innerHTML = `
+    <div class="info">สวัสดี</div>
+    <div class="val">${profile.name}</div>
+    <div class="info">สังกัด ${profile.dept}</div>
+    <div class="time-big" id="clock">${fmtTime(t)}</div>
+    <div class="date-sub">${fmtDate(t)}</div>
+    <button class="btn btn-in" onclick="doCheckIn()">เข้าสนาม</button>
+    <div class="link" onclick="resetProfile()">เปลี่ยนชื่อ / สังกัด</div>
+  `;
+  // live clock
+  const iv = setInterval(() => {
+    const el = document.getElementById('clock');
+    if (!el) { clearInterval(iv); return; }
+    el.textContent = fmtTime(now());
+  }, 1000);
+}
+
+function doCheckIn() {
+  const d = now();
+  saveSession({ ts: d.toISOString() });
+  render();
+}
+
+function renderCheckOut(app, profile, session) {
+  const entryTime = new Date(session.ts);
+  app.innerHTML = `
+    <div class="info">สวัสดี</div>
+    <div class="val">${profile.name}</div>
+    <div class="session-info">
+      <div class="info">เข้าสนามเมื่อ</div>
+      <div class="val" style="color:#22c55e;font-size:1.5rem">${fmtTime(entryTime)}</div>
+      <div class="info">${fmtDate(entryTime)}</div>
+    </div>
+    <button class="btn btn-out" onclick="doCheckOut()">ออกจากสนาม</button>
+    <div class="link" onclick="doCancel()">ยกเลิก (ลืมกดออก)</div>
+  `;
+}
+
+async function doCheckOut() {
+  const profile = getProfile();
+  const session = getSession();
+  const entryTime = new Date(session.ts);
+  const exitTime = now();
+
+  const btn = document.querySelector('.btn-out');
+  btn.textContent = 'กำลังบันทึก...';
+  btn.disabled = true;
+
+  const ok = await submitForm(profile, entryTime, entryTime, exitTime);
+  clearSession();
+
+  if (ok) toast('บันทึกเรียบร้อย ✓');
+  else toast('ส่งไม่ได้ ลองใหม่', true);
+
+  setTimeout(render, 1500);
+}
+
+function doCancel() {
+  if (confirm('ยืนยันยกเลิกการเข้าสนามครั้งนี้?')) {
+    clearSession();
+    render();
+  }
+}
+
+function resetProfile() {
+  if (confirm('รีเซ็ตชื่อและสังกัด?')) {
+    clearSession();
+    localStorage.removeItem('profile');
+    render();
+  }
+}
+
+render();
+</script>
+</body>
+</html>
