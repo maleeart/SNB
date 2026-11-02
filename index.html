@@ -951,6 +951,24 @@
     border-color: #60a5fa;
     color: #fff;
   }
+  .btn-time-preset {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .btn-time-preset:hover {
+    background: #2563eb;
+    border-color: #60a5fa;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  }
 
   /* Mobile Bottom Navigation Bar */
   nav.mobile-bottom-nav {
@@ -1883,15 +1901,31 @@
       </div>
     </div>
 
-    <!-- Time range selection -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-      <div>
-        <label class="form-label" style="font-size: 0.75rem;">⏰ เวลาเปิด (เริ่มพร้อมใช้)</label>
-        <input type="time" id="new-club-start" class="form-input" value="16:30">
+    <!-- Time range selection with presets -->
+    <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+        <label class="form-label" style="font-size: 0.78rem; margin-bottom: 0; color: #93c5fd;">
+          ⏰ ช่วงเวลาเปิดใช้งานสนาม (เลือกสะดวก ไม่ต้องพิมพ์):
+        </label>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+          <span style="font-size: 0.7rem; color: var(--text-muted); align-self: center; margin-right: 2px;">⚡ ลัด:</span>
+          <button type="button" class="btn-time-preset" onclick="setNewClubTimePreset('16:30', '20:30')">16:30-20:30 (หลังเลิกงาน)</button>
+          <button type="button" class="btn-time-preset" onclick="setNewClubTimePreset('17:00', '21:00')">17:00-21:00 (รอบค่ำ)</button>
+          <button type="button" class="btn-time-preset" onclick="setNewClubTimePreset('16:00', '20:00')">16:00-20:00</button>
+          <button type="button" class="btn-time-preset" onclick="setNewClubTimePreset('08:00', '17:00')">08:00-17:00 (ราชการ)</button>
+          <button type="button" class="btn-time-preset" onclick="setNewClubTimePreset('06:00', '21:00')">06:00-21:00 (ทั้งวัน)</button>
+          <button type="button" class="btn-time-preset" onclick="setNewClubTimePreset('09:00', '18:00')">09:00-18:00 (วันหยุด)</button>
+        </div>
       </div>
-      <div>
-        <label class="form-label" style="font-size: 0.75rem;">⏰ เวลาปิด (สิ้นสุดพร้อมใช้)</label>
-        <input type="time" id="new-club-end" class="form-input" value="20:30">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label class="form-label" style="font-size: 0.75rem;">🟢 เวลาเปิด (เริ่มพร้อมใช้)</label>
+          <select id="new-club-start" class="form-select" style="font-weight: 600; color: #86efac;"></select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size: 0.75rem;">🔴 เวลาปิด (สิ้นสุดพร้อมใช้)</label>
+          <select id="new-club-end" class="form-select" style="font-weight: 600; color: #fca5a5;"></select>
+        </div>
       </div>
     </div>
 
@@ -4155,31 +4189,88 @@ function renderAdminSchedulesEditor() {
           </div>
         </div>
 
-        <!-- Time Range & Status Mode -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-          <div>
-            <label class="form-label" style="font-size: 0.75rem;">⏰ เวลาเปิด (เริ่มพร้อมใช้)</label>
-            <input type="time" id="edit-club-start-${club.id}" class="form-input" value="${club.startTime || '16:30'}">
+        <!-- Time Range & Status Mode with Presets & Dropdowns -->
+        <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <label class="form-label" style="font-size: 0.78rem; margin-bottom: 0; color: #93c5fd;">
+              ⏰ กำหนดช่วงเวลาเปิดใช้งานสนาม (เลือกสะดวก ไม่ต้องพิมพ์):
+            </label>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              <span style="font-size: 0.7rem; color: var(--text-muted); align-self: center; margin-right: 2px;">⚡ ลัด:</span>
+              <button type="button" class="btn-time-preset" onclick="setClubTimePreset('${club.id}', '16:30', '20:30')">16:30-20:30 (หลังเลิกงาน)</button>
+              <button type="button" class="btn-time-preset" onclick="setClubTimePreset('${club.id}', '17:00', '21:00')">17:00-21:00 (รอบค่ำ)</button>
+              <button type="button" class="btn-time-preset" onclick="setClubTimePreset('${club.id}', '16:00', '20:00')">16:00-20:00</button>
+              <button type="button" class="btn-time-preset" onclick="setClubTimePreset('${club.id}', '08:00', '17:00')">08:00-17:00 (ราชการ)</button>
+              <button type="button" class="btn-time-preset" onclick="setClubTimePreset('${club.id}', '06:00', '21:00')">06:00-21:00 (ทั้งวัน)</button>
+              <button type="button" class="btn-time-preset" onclick="setClubTimePreset('${club.id}', '09:00', '18:00')">09:00-18:00 (วันหยุด)</button>
+            </div>
           </div>
-          <div>
-            <label class="form-label" style="font-size: 0.75rem;">⏰ เวลาปิด (สิ้นสุดพร้อมใช้)</label>
-            <input type="time" id="edit-club-end-${club.id}" class="form-input" value="${club.endTime || '20:30'}">
-          </div>
-          <div>
-            <label class="form-label" style="font-size: 0.75rem;">🔒 โหมดสถานะ</label>
-            <select id="edit-club-mode-${club.id}" class="form-select">
-              <option value="auto" ${club.statusMode !== 'closed' ? 'selected' : ''}>🟢 อัตโนมัติ (พร้อมใช้ / นอกเวลา / ปิด)</option>
-              <option value="closed" ${club.statusMode === 'closed' ? 'selected' : ''}>🔴 ปิดทำการชั่วคราว (งดใช้งาน)</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label" style="font-size: 0.75rem;">ℹ️ ข้อกำหนด / คำแนะนำ</label>
-            <input type="text" id="edit-club-note-${club.id}" class="form-input" value="${club.note || ''}" placeholder="เช่น สวมรองเท้ากีฬา">
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+            <div>
+              <label class="form-label" style="font-size: 0.75rem;">🟢 เวลาเปิด (เริ่มพร้อมใช้)</label>
+              <select id="edit-club-start-${club.id}" class="form-select" style="font-weight: 600; color: #86efac;">
+                ${renderTimeSelectOptions(club.startTime || '16:30')}
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem;">🔴 เวลาปิด (สิ้นสุดพร้อมใช้)</label>
+              <select id="edit-club-end-${club.id}" class="form-select" style="font-weight: 600; color: #fca5a5;">
+                ${renderTimeSelectOptions(club.endTime || '20:30')}
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem;">🔒 โหมดสถานะ</label>
+              <select id="edit-club-mode-${club.id}" class="form-select">
+                <option value="auto" ${club.statusMode !== 'closed' ? 'selected' : ''}>🟢 อัตโนมัติ (พร้อมใช้ / นอกเวลา / ปิด)</option>
+                <option value="closed" ${club.statusMode === 'closed' ? 'selected' : ''}>🔴 ปิดทำการชั่วคราว (งดใช้งาน)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem;">ℹ️ ข้อกำหนด / คำแนะนำ</label>
+              <input type="text" id="edit-club-note-${club.id}" class="form-input" value="${club.note || ''}" placeholder="เช่น สวมรองเท้ากีฬา">
+            </div>
           </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function renderTimeSelectOptions(selectedValue) {
+  const times = [];
+  for (let h = 5; h <= 23; h++) {
+    const hh = String(h).padStart(2, '0');
+    for (const m of ['00', '15', '30', '45']) {
+      times.push(`${hh}:${m}`);
+    }
+  }
+  times.push('23:59');
+  if (selectedValue && !times.includes(selectedValue)) {
+    times.push(selectedValue);
+    times.sort();
+  }
+  return times.map(t => {
+    const isSel = (t === selectedValue) ? 'selected' : '';
+    const label = t === '23:59' ? '23:59 น. (สิ้นสุดวัน)' : `${t} น.`;
+    return `<option value="${t}" ${isSel}>${label}</option>`;
+  }).join('');
+}
+
+function setClubTimePreset(clubId, start, end) {
+  const startEl = document.getElementById(`edit-club-start-${clubId}`);
+  const endEl = document.getElementById(`edit-club-end-${clubId}`);
+  if (startEl) startEl.value = start;
+  if (endEl) endEl.value = end;
+  toast(`⚡ ตั้งเวลา ${start} - ${end} น. สำเร็จ`);
+}
+
+function setNewClubTimePreset(start, end) {
+  const startEl = document.getElementById('new-club-start');
+  const endEl = document.getElementById('new-club-end');
+  if (startEl) startEl.value = start;
+  if (endEl) endEl.value = end;
+  toast(`⚡ ตั้งเวลา ${start} - ${end} น. สำเร็จ`);
 }
 
 function setClubDays(clubId, daysArray) {
@@ -4205,9 +4296,12 @@ function openAddClubModal() {
   document.getElementById('new-club-color').value = '#3b82f6';
   document.getElementById('new-club-zone').value = '';
   document.getElementById('new-club-desc').value = '';
-  document.getElementById('new-club-start').value = '16:30';
-  document.getElementById('new-club-end').value = '20:30';
   document.getElementById('new-club-note').value = '';
+
+  const startSelect = document.getElementById('new-club-start');
+  const endSelect = document.getElementById('new-club-end');
+  if (startSelect) startSelect.innerHTML = renderTimeSelectOptions('16:30');
+  if (endSelect) endSelect.innerHTML = renderTimeSelectOptions('20:30');
 
   const container = document.getElementById('new-club-days-container');
   if (container) {
