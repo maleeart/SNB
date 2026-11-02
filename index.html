@@ -1101,7 +1101,7 @@
         <span>📍</span> ลงทะเบียน เข้า-ออก
       </button>
       <button class="nav-btn" data-tab="clubs" onclick="switchMainTab('clubs')">
-        <span>🏆</span> กิจกรรมแต่ละชมรม
+        <span>🏆</span> สถานะแต่ละชมรม
       </button>
       <button class="nav-btn" data-tab="history" onclick="switchMainTab('history')">
         <span>📋</span> ประวัติและการบันทึก
@@ -1224,16 +1224,39 @@
     </div>
   </main>
 
-  <!-- VIEW 2: ALL CLUBS DIRECTORY (แยกเมนูตามกิจกรรมแต่ละชมรม) -->
+  <!-- VIEW 2: ALL CLUBS DIRECTORY (สถานะแต่ละชมรมและจำนวนคนใช้งานปัจจุบัน) -->
   <main id="view-clubs" class="tab-view">
     <div class="glass-card" style="margin-bottom: 20px;">
-      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 6px;">🏆 รายชื่อชมรมและกิจกรรมกีฬา อาคารอเนกประสงค์ ต.0025</h2>
-      <p style="font-size: 0.85rem; color: var(--text-muted);">
-        คลิกเลือกชมรมเพื่อดูข้อมูลพื้นที่ กฎกติกาการใช้งาน และลงทะเบียนเข้าใช้งานในชมรมนั้นๆ ได้ทันที
-      </p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; color: #fff;">🏆 สถานะแต่ละชมรม อาคารอเนกประสงค์ ต.0025</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            ตรวจสอบจำนวนผู้เข้าใช้งานในแต่ละชมรม/กิจกรรมแบบเรียลไทม์ และเลือกลงทะเบียนเข้าใช้งาน
+          </p>
+        </div>
+        <button class="btn-secondary" onclick="syncFromCloud(false); renderClubsFullDirectory();" style="font-size: 0.82rem; padding: 8px 14px; color: #60a5fa; border-color: rgba(59, 130, 246, 0.4);">
+          🔄 อัปเดตข้อมูลสถานะล่าสุด
+        </button>
+      </div>
+
+      <!-- Live KPI Summary Bar -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 12px 16px; text-align: center;">
+          <div style="font-size: 0.75rem; color: #a7f3d0; margin-bottom: 4px;">👥 ผู้ใช้งานในอาคารทั้งหมดขณะนี้</div>
+          <div style="font-size: 1.8rem; font-weight: 700; color: #34d399;" id="clubs-total-active">0 คน</div>
+        </div>
+        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-md); padding: 12px 16px; text-align: center;">
+          <div style="font-size: 0.75rem; color: #93c5fd; margin-bottom: 4px;">🏟️ ชมรมที่มีผู้กำลังใช้งาน</div>
+          <div style="font-size: 1.8rem; font-weight: 700; color: #60a5fa;" id="clubs-active-count">0 / 5 ชมรม</div>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 12px 16px; text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">🕒 ซิงก์ฐานข้อมูลล่าสุดเมื่อ</div>
+          <div style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-top: 6px;" id="clubs-last-sync-time">-</div>
+        </div>
+      </div>
     </div>
 
-    <div class="clubs-overview-grid" id="clubs-full-directory" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
+    <div class="clubs-overview-grid" id="clubs-full-directory" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
       <!-- Populated by JS -->
     </div>
   </main>
@@ -1549,7 +1572,7 @@
   </button>
   <button class="bottom-nav-item" data-tab="clubs" onclick="switchMainTab('clubs')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-    <span>ชมรม</span>
+    <span>สถานะชมรม</span>
   </button>
   <button class="bottom-nav-item" data-tab="history" onclick="switchMainTab('history')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -1645,7 +1668,7 @@
 const DEFAULT_CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbwVpaOhEtPtK9r6Xh84NLsdhFPINoLNQDIjIZDxc3Txxox65mPDxcePeXKN572VsWkeag/exec';
 
 function getCloudApiUrl() {
-  const custom = localStorage.getItem('snb_cloud_url');
+  const custom = (localStorage.getItem('snb_cloud_url') || '').trim();
   if (custom && custom.includes('AKfycbx6FEzanKOXVBoy_2HO1v7czt7XvawkIqYx0s77KcPAJP-YwJ_BoPMtuGOSMqQzyJB0MA')) {
     localStorage.removeItem('snb_cloud_url');
     return DEFAULT_CLOUD_API_URL;
@@ -1881,6 +1904,41 @@ function getSelectedClub() {
   return CLUBS.find(c => c.id === currentClubId) || CLUBS[0];
 }
 
+function isRecordActive(log) {
+  if (!log) return false;
+  if (log.status === 'completed' || log.status === 'cancelled') return false;
+  if (log.checkOutTime && String(log.checkOutTime).trim() !== '') return false;
+  return log.status === 'active' || !log.checkOutTime;
+}
+
+function getActiveLogsForClub(club) {
+  if (!club) return [];
+  return activeLogsCache.filter(l => 
+    (l.clubId === club.id || l.clubName === club.name) && isRecordActive(l)
+  );
+}
+
+function updateBannerClubOccupants() {
+  const bOcc = document.getElementById('banner-club-occupants');
+  if (!bOcc) return;
+  const club = getSelectedClub();
+  const activeInClub = getActiveLogsForClub(club).length;
+
+  if (activeInClub > 0) {
+    bOcc.className = 'status-tag status-active';
+    bOcc.innerHTML = `🟢 ${activeInClub} คนในสนาม`;
+    bOcc.style.background = 'rgba(16, 185, 129, 0.2)';
+    bOcc.style.color = '#34d399';
+    bOcc.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+  } else {
+    bOcc.className = 'status-tag status-completed';
+    bOcc.innerHTML = `⚪ ว่าง (0 คนในสนาม)`;
+    bOcc.style.background = 'rgba(255, 255, 255, 0.05)';
+    bOcc.style.color = 'var(--text-muted)';
+    bOcc.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+  }
+}
+
 function getUserProfile() {
   const p = localStorage.getItem('profile');
   if (!p) return null;
@@ -2049,7 +2107,10 @@ function executeSwitchMainTab(tabId) {
   if (target) target.classList.add('active');
 
   // Trigger data refreshes on tab open
-  if (tabId === 'history') {
+  if (tabId === 'clubs') {
+    syncFromCloud(true);
+    renderClubsFullDirectory();
+  } else if (tabId === 'history') {
     syncFromCloud(true);
     loadHistoryTable();
   } else if (tabId === 'analytics') {
@@ -2064,10 +2125,11 @@ function executeSwitchMainTab(tabId) {
 /* ─── CLUB SELECTOR & THEME ENGINE ─── */
 function renderClubTabs() {
   const container = document.getElementById('club-tabs-list');
+  if (!container) return;
   container.innerHTML = CLUBS.map(club => {
     const isActive = club.id === currentClubId;
     // Count active occupants in this club
-    const activeInClub = activeLogsCache.filter(l => l.clubId === club.id).length;
+    const activeInClub = getActiveLogsForClub(club).length;
     return `
       <div class="club-tab-item ${isActive ? 'active' : ''}" 
            data-club="${club.id}" 
@@ -2105,6 +2167,7 @@ function selectClub(clubId) {
   if (bName) bName.textContent = club.name;
   if (bZone) bZone.textContent = club.zone;
 
+  updateBannerClubOccupants();
   renderClubTabs();
   renderCheckInArea();
   updateCanvasTheme(club);
@@ -2561,7 +2624,7 @@ async function syncFromCloud(silent = false) {
     if (data && Array.isArray(data.records)) {
       await appDB.bulkUpsert(data.records);
       allLogsCache = await appDB.getAllLogs();
-      activeLogsCache = allLogsCache.filter(l => l.status === 'active');
+      activeLogsCache = allLogsCache.filter(isRecordActive);
       
       if (!silent) toast(`ซิงก์ข้อมูลจาก Google Sheets สำเร็จ (${data.records.length} รายการ) ✓`);
 
@@ -2576,7 +2639,7 @@ async function syncFromCloud(silent = false) {
           <span style="color: var(--text-muted);">ซิงก์ข้อมูลแล้ว ${data.records.length} รายการ • ข้อมูลจากทุกเครื่องจะถูกรวบรวมไว้ที่นี่</span>
         `;
       }
-      refreshDataViews();
+      await refreshDataViews();
       if (typeof applyHistoryFilters === 'function') applyHistoryFilters();
       return true;
     }
@@ -2602,7 +2665,7 @@ async function syncFromCloud(silent = false) {
 async function refreshDataViews() {
   const allLogs = await appDB.getAllLogs();
   allLogsCache = allLogs;
-  activeLogsCache = allLogs.filter(l => l.status === 'active');
+  activeLogsCache = allLogs.filter(isRecordActive);
 
   // Update header counter
   const headerActiveCount = document.getElementById('header-active-count');
@@ -2610,6 +2673,9 @@ async function refreshDataViews() {
 
   const activeBadge = document.getElementById('active-count-badge');
   if (activeBadge) activeBadge.textContent = `${activeLogsCache.length} คน`;
+
+  // Update club hero banner occupants tag
+  updateBannerClubOccupants();
 
   // Update club tabs counter
   renderClubTabs();
@@ -2620,49 +2686,119 @@ async function refreshDataViews() {
 
 function renderClubsQuickGrid() {
   const container = document.getElementById('clubs-quick-grid');
-  if (!container) return;
-
-  container.innerHTML = CLUBS.map(club => {
-    const activeCount = activeLogsCache.filter(l => l.clubId === club.id).length;
-    return `
-      <div class="club-card-widget" style="--item-accent: ${club.color};" onclick="selectClub('${club.id}')">
-        <div class="club-card-top">
-          <span class="club-card-icon">${club.icon}</span>
-          <span class="club-active-tag">${activeCount > 0 ? `🟢 ${activeCount} คน` : 'พร้อมใช้งาน'}</span>
-        </div>
-        <div class="club-card-title">${club.name}</div>
-        <div class="club-card-desc">${club.zone}</div>
-        <div class="club-card-action">
-          <span>คลิกเพื่อเลือกใช้งาน</span>
-          <span>→</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // Also render full directory if on Clubs tab
-  const dirContainer = document.getElementById('clubs-full-directory');
-  if (dirContainer) {
-    dirContainer.innerHTML = CLUBS.map(club => {
-      const activeCount = activeLogsCache.filter(l => l.clubId === club.id).length;
+  if (container) {
+    container.innerHTML = CLUBS.map(club => {
+      const activeInClub = getActiveLogsForClub(club);
+      const activeCount = activeInClub.length;
       return `
-        <div class="glass-card" style="border-top: 4px solid ${club.color};">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <div style="font-size: 2.4rem;">${club.icon}</div>
-            <span class="status-tag ${activeCount > 0 ? 'status-active' : 'status-completed'}">
-              ${activeCount > 0 ? `🟢 กำลังเล่น ${activeCount} คน` : 'ว่าง'}
+        <div class="club-card-widget" style="--item-accent: ${club.color};" onclick="selectClub('${club.id}')">
+          <div class="club-card-top">
+            <span class="club-card-icon">${club.icon}</span>
+            <span class="club-active-tag" style="${activeCount > 0 ? 'background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700; border-color: rgba(16, 185, 129, 0.5);' : ''}">
+              ${activeCount > 0 ? `🟢 ${activeCount} คนใช้งาน` : 'พร้อมใช้งาน'}
             </span>
           </div>
-          <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 4px;">${club.name}</h3>
-          <p style="font-size: 0.78rem; color: #60a5fa; margin-bottom: 8px;">${club.zone}</p>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">${club.desc}</p>
-          <button class="btn-secondary" style="width: 100%; justify-content: center;" onclick="selectClub('${club.id}'); switchMainTab('checkin');">
-            ลงทะเบียนเข้าชมรมนี้
-          </button>
+          <div class="club-card-title">${club.name}</div>
+          <div class="club-card-desc">${club.zone}</div>
+          <div class="club-card-action">
+            <span>คลิกเพื่อสลับชมรมนี้</span>
+            <span>→</span>
+          </div>
         </div>
       `;
     }).join('');
   }
+
+  // Also render full directory if on Clubs tab
+  renderClubsFullDirectory();
+}
+
+function renderClubsFullDirectory() {
+  const dirContainer = document.getElementById('clubs-full-directory');
+  if (!dirContainer) return;
+
+  // Update Summary KPI
+  const totalActive = activeLogsCache.length;
+  const activeClubsCount = CLUBS.filter(club => getActiveLogsForClub(club).length > 0).length;
+
+  const totalEl = document.getElementById('clubs-total-active');
+  if (totalEl) totalEl.textContent = `${totalActive} คน`;
+  const clubsCountEl = document.getElementById('clubs-active-count');
+  if (clubsCountEl) clubsCountEl.textContent = `${activeClubsCount} / ${CLUBS.length} ชมรม`;
+  const syncTimeEl = document.getElementById('clubs-last-sync-time');
+  if (syncTimeEl) syncTimeEl.textContent = formatThaiTime(new Date());
+
+  dirContainer.innerHTML = CLUBS.map(club => {
+    const activeInThisClub = getActiveLogsForClub(club);
+    const count = activeInThisClub.length;
+
+    let occupantsListHtml = '';
+    if (count > 0) {
+      occupantsListHtml = `
+        <div style="background: rgba(0, 0, 0, 0.35); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px solid rgba(16, 185, 129, 0.25);">
+          <div style="font-size: 0.78rem; font-weight: 600; color: #34d399; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span>👥 รายชื่อผู้กำลังใช้งาน (${count} คน):</span>
+          </div>
+          <div style="max-height: 120px; overflow-y: auto;">
+            ${activeInThisClub.map(log => {
+              const inTime = log.checkInTime ? formatThaiTime(new Date(log.checkInTime)) : '';
+              return `
+                <div style="font-size: 0.8rem; color: #fff; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>• ${log.userName}</strong> 
+                    <span style="color: var(--text-dim); font-size: 0.72rem;">(${log.department})</span>
+                  </div>
+                  <span style="color: var(--text-muted); font-size: 0.72rem;">เข้า ${inTime}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      occupantsListHtml = `
+        <div style="background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px dashed rgba(255,255,255,0.08); text-align: center;">
+          <span style="font-size: 0.78rem; color: var(--text-dim);">⚪ ขณะนี้ยังไม่มีผู้ลงทะเบียน (คอร์ตว่างพร้อมใช้งาน)</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="glass-card" style="border-top: 4px solid ${club.color}; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <!-- Header: Icon & Live Status Badge -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div style="font-size: 2.4rem;">${club.icon}</div>
+            <span class="status-tag ${count > 0 ? 'status-active' : 'status-completed'}" style="${count > 0 ? 'background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; border-color: rgba(16, 185, 129, 0.4);' : ''}">
+              ${count > 0 ? `🟢 กำลังเล่น ${count} คน` : '⚪ ว่าง (0 คน)'}
+            </span>
+          </div>
+
+          <!-- Title & Zone -->
+          <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 2px;">${club.name}</h3>
+          <p style="font-size: 0.78rem; color: #60a5fa; margin-bottom: 8px;">${club.zone}</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">${club.desc}</p>
+
+          <!-- Highlight Occupants Count Banner -->
+          <div style="background: ${count > 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${count > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.08)'}; border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.82rem; color: ${count > 0 ? '#a7f3d0' : 'var(--text-muted)'};">
+              👥 จำนวนผู้ใช้งาน ณ ปัจจุบัน
+            </span>
+            <span style="font-size: 1.15rem; font-weight: 700; color: ${count > 0 ? '#34d399' : 'var(--text-muted)'};">
+              ${count} คน
+            </span>
+          </div>
+
+          <!-- Occupants List -->
+          ${occupantsListHtml}
+        </div>
+
+        <button class="btn-secondary" style="width: 100%; justify-content: center; padding: 10px; font-weight: 600; color: #fff; margin-top: 6px;" onclick="selectClub('${club.id}'); switchMainTab('checkin');">
+          <span>${club.icon}</span> เลือกลงทะเบียนเข้าใช้งานชมรมนี้ →
+        </button>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderActiveMembersList() {
@@ -2679,8 +2815,8 @@ function renderActiveMembersList() {
   }
 
   container.innerHTML = activeLogsCache.map(log => {
-    const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
-    const checkInTime = new Date(log.checkInTime);
+    const club = CLUBS.find(c => c.id === log.clubId || c.name === log.clubName) || { icon: '🏢', name: log.clubName || 'อาคารทั่วไป' };
+    const checkInTime = log.checkInTime ? new Date(log.checkInTime) : new Date();
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px;">
         <div>
@@ -2715,8 +2851,11 @@ async function forceCheckOutLog(id) {
       const currentSession = getCurrentSession();
       if (currentSession && currentSession.id === id) clearSession();
 
+      // Cloud sync checkout to Google Sheets
+      syncRecordToCloud(log, 'checkOut');
+
       toast('บันทึกการออกเรียบร้อย');
-      refreshDataViews();
+      await refreshDataViews();
       loadHistoryTable();
     }
   }
@@ -3255,8 +3394,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   refreshProfileDisplay();
   await refreshDataViews();
 
-  // Auto sync latest records from Google Sheets
-  syncFromCloud(true);
+  // Auto sync latest records from Google Sheets immediately
+  await syncFromCloud(true);
+
+  // Auto poll every 20s in background to keep live occupant counts updated across all devices
+  setInterval(() => {
+    syncFromCloud(true);
+  }, 20000);
 
   // If new user with no profile, auto prompt setup modal
   const profile = getUserProfile();
