@@ -3,471 +3,2863 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>SNBasket</title>
+<title>ระบบลงทะเบียนเข้าใช้งานอาคารและกิจกรรมกีฬา | กฟผ. ไทรน้อย</title>
 <link rel="apple-touch-icon" href="logo.jpg">
 <link rel="icon" type="image/jpeg" href="logo.jpg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SNBasket">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta name="apple-mobile-web-app-title" content="ระบบใช้งานอาคาร">
+<meta name="theme-color" content="#090d16">
 
-  body {
-    font-family: 'Sarabun', sans-serif;
-    background: #0d0500;
-    color: #f1f5f9;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    overflow: hidden;
-    position: relative;
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- SheetJS สำหรับ Export Excel (.xlsx) แท้ -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+  :root {
+    --bg-main: #090d16;
+    --bg-card: rgba(15, 23, 42, 0.75);
+    --bg-card-hover: rgba(30, 41, 59, 0.85);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.35);
+    --green-btn: linear-gradient(135deg, #10b981, #059669);
+    --red-btn: linear-gradient(135deg, #ef4444, #dc2626);
+    --orange-glow: rgba(249, 115, 22, 0.4);
+    --radius-xl: 20px;
+    --radius-lg: 14px;
+    --radius-md: 10px;
   }
 
-  canvas#bg {
+  /* Club-specific accent colors */
+  [data-club="basketball"] { --club-color: #f97316; --club-glow: rgba(249, 115, 22, 0.35); }
+  [data-club="golf"]       { --club-color: #10b981; --club-glow: rgba(16, 185, 129, 0.35); }
+  [data-club="archery"]    { --club-color: #ef4444; --club-glow: rgba(239, 68, 68, 0.35); }
+  [data-club="badminton"]  { --club-color: #06b6d4; --club-glow: rgba(6, 182, 212, 0.35); }
+  [data-club="heights_training"] { --club-color: #eab308; --club-glow: rgba(234, 179, 8, 0.35); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Prompt', 'Sarabun', sans-serif;
+    background: var(--bg-main);
+    color: var(--text-main);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: 90px; /* Space for mobile nav */
+  }
+
+  @media (min-width: 1024px) {
+    body { padding-bottom: 30px; }
+  }
+
+  /* Canvas background */
+  canvas#bg-canvas {
     position: fixed;
     inset: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
     z-index: 0;
+    opacity: 0.85;
   }
 
-  .overlay {
+  .ambient-glow {
     position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, rgba(13,5,0,0.55) 0%, rgba(13,5,0,0.85) 100%);
-    z-index: 1;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 600px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
     pointer-events: none;
+    z-index: 1;
+    transition: background 0.8s ease;
   }
 
-  .content {
+  /* App Shell Container */
+  .app-container {
     position: relative;
     z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 20px;
+  }
+
+  /* Header */
+  header.app-header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    width: 100%;
-  }
-
-  .logo-wrap {
-    position: relative;
-    margin-bottom: 14px;
-  }
-  .logo-wrap img {
-    width: 86px; height: 86px;
-    border-radius: 20px;
-    object-fit: cover;
-    border: 2px solid rgba(232,93,4,0.5);
-    box-shadow: 0 0 24px rgba(232,93,4,0.4), 0 0 60px rgba(232,93,4,0.15);
-  }
-
-  h1 {
-    font-size: 1rem;
-    color: #fb923c;
-    margin-bottom: 24px;
-    letter-spacing: 0.08em;
-    text-shadow: 0 0 20px rgba(251,146,60,0.5);
-  }
-
-  .card {
-    background: rgba(20,8,0,0.75);
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(232,93,4,0.2);
-    border-radius: 24px;
-    padding: 28px;
-    width: 100%;
-    max-width: 360px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   }
 
-  .info { font-size: 0.82rem; color: #92400e; margin-bottom: 4px; }
-  .val  { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: #fed7aa; }
-
-  label {
-    display: block;
-    font-size: 0.82rem;
-    color: #92400e;
-    margin-bottom: 6px;
-    margin-top: 16px;
-  }
-
-  input, select {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid rgba(232,93,4,0.3);
-    background: rgba(0,0,0,0.4);
-    color: #fed7aa;
-    font-size: 1rem;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .2s;
-  }
-  input:focus, select:focus { border-color: #e85d04; }
-  select option { background: #1a0700; }
-
-  .btn {
-    width: 100%;
-    padding: 18px;
-    border-radius: 16px;
-    border: none;
-    font-size: 1.2rem;
-    font-weight: 800;
+  .brand-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
     cursor: pointer;
-    margin-top: 24px;
+  }
+
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+
+  .brand-text h1 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+
+  .brand-text p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.2;
+  }
+
+  .brand-text span.badge-bldg {
+    display: inline-block;
+    font-size: 0.68rem;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-left: 4px;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  /* Desktop Nav Menu */
+  nav.desktop-nav {
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  @media (min-width: 900px) {
+    nav.desktop-nav { display: flex; }
+  }
+
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
     font-family: inherit;
-    letter-spacing: 0.05em;
-    transition: transform .1s, box-shadow .1s;
+  }
+
+  .nav-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .nav-btn.active {
+    color: #fff;
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .occupants-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #10b981;
+    animation: pulse 1.6s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+
+  /* Club Category Carousel / Scroll Pill */
+  .club-category-container {
+    margin-bottom: 20px;
+  }
+
+  .section-title-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .club-tabs {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .club-tabs::-webkit-scrollbar { display: none; }
+
+  .club-tab-item {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border-color);
+    padding: 10px 18px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+  }
+
+  .club-tab-item:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .club-tab-item.active {
+    background: var(--club-glow);
+    border-color: var(--club-color);
+    box-shadow: 0 4px 20px var(--club-glow);
+    transform: translateY(-2px);
+  }
+
+  .club-tab-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+  }
+
+  .club-tab-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .club-tab-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .club-tab-count {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  /* Main Responsive Grid Layout */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (min-width: 1024px) {
+    .main-layout {
+      grid-template-columns: 420px 1fr;
+      align-items: start;
+    }
+  }
+
+  /* Glass Cards */
+  .glass-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     position: relative;
     overflow: hidden;
   }
-  .btn:active { transform: scale(0.97); }
+
+  .card-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+  }
+
+  /* Check-in Card Elements */
+  .profile-welcome {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .user-avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    flex-shrink: 0;
+  }
+
+  .profile-details {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  .profile-name {
+    font-size: 1.12rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-dept-tag {
+    font-size: 0.8rem;
+    color: #93c5fd;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .switch-profile-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .switch-profile-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Active Club Banner Card inside check-in */
+  .selected-club-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: var(--radius-lg);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .selected-club-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .selected-club-icon {
+    font-size: 1.8rem;
+  }
+
+  .selected-club-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .selected-club-zone {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Digital Clock Display */
+  .clock-display-wrap {
+    text-align: center;
+    padding: 12px 0 20px;
+  }
+
+  .digital-time {
+    font-size: 3.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 0 25px var(--accent-glow);
+    transition: text-shadow 0.5s ease;
+  }
+
+  .digital-date {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Action Buttons */
+  .btn-checkin-action {
+    width: 100%;
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    border: none;
+    font-size: 1.18rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-checkin-action:active {
+    transform: scale(0.97);
+  }
 
   .btn-in {
-    background: linear-gradient(135deg, #16a34a, #22c55e);
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
   }
-  .btn-in:active { box-shadow: 0 2px 8px rgba(34,197,94,0.3); }
+  .btn-in:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.55);
+  }
 
   .btn-out {
-    background: linear-gradient(135deg, #c2410c, #f97316);
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(249,115,22,0.45);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    box-shadow: 0 6px 25px rgba(239, 68, 68, 0.4);
   }
-  .btn-out:active { box-shadow: 0 2px 8px rgba(249,115,22,0.3); }
-
-  .btn-save {
-    background: linear-gradient(135deg, #c2410c, #e85d04);
-    color: #fff;
-    font-size: 1rem;
-    padding: 14px;
-    box-shadow: 0 4px 20px rgba(232,93,4,0.4);
+  .btn-out:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.55);
   }
 
-  .time-big {
-    font-size: 3.2rem;
-    font-weight: 900;
-    color: #fb923c;
+  /* Active Session Details Box */
+  .active-session-box {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 20px;
     text-align: center;
-    margin: 8px 0 4px;
-    text-shadow: 0 0 30px rgba(251,146,60,0.6);
-    letter-spacing: 0.04em;
   }
 
-  .date-sub { text-align: center; color: #78350f; font-size: 0.9rem; margin-bottom: 20px; }
-
-  .session-info {
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(232,93,4,0.15);
-    border-radius: 14px;
-    padding: 14px;
-    margin-top: 16px;
+  .session-timer-big {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #34d399;
+    font-variant-numeric: tabular-nums;
+    margin: 4px 0;
   }
 
-  .link {
-    color: #78350f;
-    font-size: 0.75rem;
-    text-align: center;
-    margin-top: 20px;
+  .session-meta-row {
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Form Elements */
+  .form-group {
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .form-input, .form-select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .form-input:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .form-select option {
+    background: #0f172a;
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: color .2s;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
-  .link:hover { color: #fb923c; }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
 
+  /* Club Grid Overview (Right column or separate view) */
+  .clubs-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .club-card-widget {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .club-card-widget::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--item-accent, #3b82f6);
+  }
+
+  .club-card-widget:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  }
+
+  .club-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .club-card-icon {
+    font-size: 2rem;
+  }
+
+  .club-active-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .club-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .club-card-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .club-card-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.75rem;
+    color: #60a5fa;
+  }
+
+  /* History & Table Styles */
+  .history-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .history-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1 1 300px;
+  }
+
+  .search-box {
+    position: relative;
+    flex: 1 1 200px;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
+
+  .search-icon-svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+
+  .export-btn-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-export-excel {
+    background: linear-gradient(135deg, #107c41, #15803d);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+    transition: all 0.2s;
+  }
+  .btn-export-excel:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.45);
+  }
+
+  .btn-export-csv {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .btn-export-csv:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Table styling */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: rgba(10, 15, 29, 0.5);
+  }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+  }
+
+  table.data-table th {
+    background: rgba(15, 23, 42, 0.95);
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+
+  table.data-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #f1f5f9;
+    white-space: nowrap;
+  }
+
+  table.data-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .badge-club-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .status-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .status-active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  .status-completed {
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  /* Mobile Card View for Logs */
+  .mobile-log-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .log-card-item {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px;
+  }
+
+  .log-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .log-card-user {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .log-card-times {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Stats Cards Grid */
+  .stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .stat-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .stat-trend {
+    font-size: 0.72rem;
+    color: #34d399;
+    margin-top: 4px;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  nav.mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 68px;
+    background: rgba(9, 13, 22, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border-color);
+    z-index: 100;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 10px;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+  }
+
+  @media (min-width: 900px) {
+    nav.mobile-bottom-nav { display: none; }
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    font-family: inherit;
+    cursor: pointer;
+    flex: 1;
+    padding: 6px 0;
+    transition: color 0.2s;
+  }
+
+  .bottom-nav-item.active {
+    color: #60a5fa;
+  }
+
+  .bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .modal-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-content {
+    background: #0f172a;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 480px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    transform: scale(0.95);
+    transition: transform 0.25s ease;
+  }
+
+  .modal-backdrop.show .modal-content {
+    transform: scale(1);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .modal-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .modal-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .modal-close-btn:hover { color: #fff; }
+
+  /* Toast notification */
   #toast {
     position: fixed;
-    bottom: 36px;
+    top: 24px;
     left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #16a34a, #22c55e);
+    transform: translateX(-50%) translateY(-100px);
+    background: linear-gradient(135deg, #10b981, #059669);
     color: #fff;
-    padding: 13px 28px;
-    border-radius: 14px;
-    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
     opacity: 0;
-    transition: opacity .3s, transform .3s;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    z-index: 2000;
     pointer-events: none;
-    z-index: 100;
-    white-space: nowrap;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #toast.show { opacity: 1; }
-  #toast.err  { background: linear-gradient(135deg, #b91c1c, #ef4444); }
 
-  /* ripple on buttons */
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  #toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  /* Ripple effect */
   .ripple {
     position: absolute;
     border-radius: 50%;
-    background: rgba(255,255,255,0.25);
+    background: rgba(255, 255, 255, 0.35);
     transform: scale(0);
     animation: ripple-anim .5s linear;
     pointer-events: none;
   }
   @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+  /* Tab View visibility */
+  .tab-view { display: none; }
+  .tab-view.active { display: block; }
+
+  /* Print Styles */
+  @media print {
+    body { background: #fff !important; color: #000 !important; padding: 0 !important; }
+    canvas#bg-canvas, .ambient-glow, .mobile-bottom-nav, .desktop-nav, .export-btn-group, .history-filters, .btn-checkin-action, .club-category-container { display: none !important; }
+    .glass-card, header.app-header { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+    table.data-table th, table.data-table td { color: #000 !important; border-bottom: 1px solid #ddd !important; }
+    .table-responsive { overflow: visible !important; }
+  }
 </style>
 </head>
-<body>
+<body data-club="basketball">
 
-<canvas id="bg"></canvas>
-<div class="overlay"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="ambient-glow" id="ambient-glow"></div>
 
-<div class="content">
-  <div class="logo-wrap">
-    <img src="logo.jpg" alt="logo">
+<div class="app-container">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-area" onclick="switchMainTab('checkin')">
+      <img src="logo.jpg" alt="Logo" class="brand-logo" onerror="this.style.display='none'">
+      <div class="brand-text">
+        <h1>ระบบลงทะเบียนใช้งานอาคารและกิจกรรมกีฬา</h1>
+        <p>อาคารอเนกประสงค์ ต.0025 <span class="badge-bldg">กฟผ. ไทรน้อย</span></p>
+      </div>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="desktop-nav">
+      <button class="nav-btn active" data-tab="checkin" onclick="switchMainTab('checkin')">
+        <span>📍</span> ลงทะเบียน เข้า-ออก
+      </button>
+      <button class="nav-btn" data-tab="clubs" onclick="switchMainTab('clubs')">
+        <span>🏆</span> กิจกรรมแต่ละชมรม
+      </button>
+      <button class="nav-btn" data-tab="history" onclick="switchMainTab('history')">
+        <span>📋</span> ประวัติและการบันทึก
+      </button>
+      <button class="nav-btn" data-tab="analytics" onclick="switchMainTab('analytics')">
+        <span>📊</span> สถิติภาพรวม
+      </button>
+      <button class="nav-btn" data-tab="settings" onclick="switchMainTab('settings')">
+        <span>⚙️</span> ตั้งค่า
+      </button>
+    </nav>
+
+    <!-- Header Right Live Status -->
+    <div class="header-actions">
+      <div class="occupants-pill" onclick="switchMainTab('history')" title="ดูผู้ที่กำลังใช้งานอาคาร">
+        <div class="pulse-dot"></div>
+        <span>ในอาคาร <strong id="header-active-count">0</strong> คน</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Club Category Tabs (Always accessible quick bar) -->
+  <div class="club-category-container">
+    <div class="section-title-wrap">
+      <div class="section-title">
+        <span>🏷️</span> เลือกกิจกรรม / ชมรม
+      </div>
+      <span style="font-size: 0.75rem; color: var(--text-dim);" id="active-club-summary-text">กำลังเลือก: ชมรมบาสเก็ตบอล</span>
+    </div>
+
+    <div class="club-tabs" id="club-tabs-list">
+      <!-- Generated via JS -->
+    </div>
   </div>
-  <h1>บันทึกการใช้งานสนามบาส</h1>
-  <p style="font-size:0.75rem;color:#c2410c;margin-top:-20px;margin-bottom:6px;text-align:center;letter-spacing:0.03em;">(อาคารอเนกประสงค์ ต.0025)</p>
-  <p style="font-size:0.72rem;color:#78350f;margin-bottom:24px;text-align:center;line-height:1.6;">การไฟฟ้าฝ่ายผลิตแห่งประเทศไทย สำนักงานไทรน้อย</p>
-  <div class="card" id="app"></div>
+
+  <!-- VIEW 1: CHECK-IN / CHECK-OUT (หน้าหลักลงทะเบียน) -->
+  <main id="view-checkin" class="tab-view active">
+    <div class="main-layout">
+      
+      <!-- Left Column: Check-in Terminal Card -->
+      <div class="glass-card">
+        <div class="card-header-bar">
+          <span class="card-badge" id="terminal-badge">⚡ จุดลงทะเบียนผู้ใช้งาน</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);" id="today-dayname"></span>
+        </div>
+
+        <!-- User Profile Strip -->
+        <div class="profile-welcome" id="user-profile-strip">
+          <div class="user-avatar-circle" id="user-avatar-initial">ก</div>
+          <div class="profile-details">
+            <div class="profile-name" id="display-user-name">กรุณาตั้งค่าชื่อผู้ใช้</div>
+            <div class="profile-dept-tag">
+              <span>🏢</span> <span id="display-user-dept">สังกัด: -</span>
+            </div>
+          </div>
+          <button class="switch-profile-btn" onclick="openProfileModal()">แก้ไข</button>
+        </div>
+
+        <!-- Active Selected Club Box -->
+        <div class="selected-club-banner" id="selected-club-banner">
+          <div class="selected-club-info">
+            <div class="selected-club-icon" id="banner-club-icon">🏀</div>
+            <div>
+              <div class="selected-club-name" id="banner-club-name">ชมรมบาสเก็ตบอล</div>
+              <div class="selected-club-zone" id="banner-club-zone">คอร์ตบาสเก็ตบอลในร่ม</div>
+            </div>
+          </div>
+          <div class="status-tag status-active" id="banner-club-occupants">0 คนในสนาม</div>
+        </div>
+
+        <!-- Digital Clock -->
+        <div class="clock-display-wrap">
+          <div class="digital-time" id="live-clock">00:00:00</div>
+          <div class="digital-date" id="live-date">กำลังโหลดวันเวลา...</div>
+        </div>
+
+        <!-- Check-in / Check-out Interactive Dynamic Area -->
+        <div id="checkin-action-area">
+          <!-- Rendered dynamically depending on session state -->
+        </div>
+
+        <!-- Optional Note Input -->
+        <div class="form-group" style="margin-top: 18px;" id="note-input-container">
+          <label class="form-label">หมายเหตุ / อุปกรณ์ที่ยืม (ถ้ามี)</label>
+          <input type="text" id="checkin-note" class="form-input" placeholder="เช่น ยืมลูกบาส 1 ลูก, ซ้อมเดี่ยว, จองคอร์ต">
+        </div>
+      </div>
+
+      <!-- Right Column: Live Club Status Overview & Fast Switch -->
+      <div>
+        <div class="section-title-wrap" style="margin-bottom: 12px;">
+          <div class="section-title">
+            <span>🏟️</span> สถานะแต่ละชมรมในอาคารขณะนี้
+          </div>
+          <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="refreshDataViews()">
+            🔄 รีเฟรช
+          </button>
+        </div>
+
+        <div class="clubs-overview-grid" id="clubs-quick-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Live Active Members inside Building List -->
+        <div class="glass-card" style="padding: 18px; margin-top: 10px;">
+          <div class="card-header-bar" style="margin-bottom: 12px;">
+            <div class="section-title" style="color: #fff; text-transform: none;">
+              <span>👥</span> ผู้ที่กำลังใช้งานอาคารอยู่ในขณะนี้
+            </div>
+            <span class="badge-club-tag status-active" id="active-count-badge">0 คน</span>
+          </div>
+          <div id="active-members-list" style="max-height: 220px; overflow-y: auto;">
+            <div style="text-align: center; color: var(--text-dim); padding: 20px; font-size: 0.85rem;">
+              ยังไม่มีผู้เข้าใช้งานในขณะนี้
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- VIEW 2: ALL CLUBS DIRECTORY (แยกเมนูตามกิจกรรมแต่ละชมรม) -->
+  <main id="view-clubs" class="tab-view">
+    <div class="glass-card" style="margin-bottom: 20px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 6px;">🏆 รายชื่อชมรมและกิจกรรมกีฬา อาคารอเนกประสงค์ ต.0025</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        คลิกเลือกชมรมเพื่อดูข้อมูลพื้นที่ กฎกติกาการใช้งาน และลงทะเบียนเข้าใช้งานในชมรมนั้นๆ ได้ทันที
+      </p>
+    </div>
+
+    <div class="clubs-overview-grid" id="clubs-full-directory" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
+      <!-- Populated by JS -->
+    </div>
+  </main>
+
+  <!-- VIEW 3: HISTORY & EXPORT (ประวัติการใช้งานและฐานข้อมูล) -->
+  <main id="view-history" class="tab-view">
+    <div class="glass-card">
+      <div class="history-toolbar">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 600; color: #fff;">📋 ประวัติการลงทะเบียนเข้าใช้งาน</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">บันทึกในฐานข้อมูลระบบ สามารถค้นหา กรองข้อมูล และ Export ออกเป็นไฟล์ได้ทันที</p>
+        </div>
+
+        <!-- Export Buttons Group -->
+        <div class="export-btn-group">
+          <button class="btn-export-excel" onclick="exportToExcel()" title="ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)">
+            <span>📊</span> Export Excel (.xlsx)
+          </button>
+          <button class="btn-export-csv" onclick="exportToCSV()" title="ดาวน์โหลดเป็นไฟล์ CSV (UTF-8)">
+            <span>📄</span> Export CSV
+          </button>
+          <button class="btn-secondary" onclick="window.print()" title="พิมพ์รายงาน">
+            <span>🖨️</span> พิมพ์
+          </button>
+          <button class="btn-secondary" onclick="exportDatabaseJSON()" title="สำรองฐานข้อมูลเป็น JSON">
+            <span>💾</span> Backup JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div class="history-toolbar" style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px;">
+        <div class="history-filters">
+          <!-- Search input -->
+          <div class="search-box">
+            <span class="search-icon-svg">🔍</span>
+            <input type="text" id="filter-search" placeholder="ค้นหาชื่อ, สังกัด, หมายเหตุ..." oninput="applyHistoryFilters()">
+          </div>
+
+          <!-- Filter Club -->
+          <select id="filter-club" class="form-select" style="width: auto; padding: 8px 12px;" onchange="applyHistoryFilters()">
+            <option value="all">ทุกชมรม / ทุกกิจกรรม</option>
+            <option value="basketball">🏀 ชมรมบาสเก็ตบอล</option>
+            <option value="golf">⛳ ชมรมกอล์ฟ</option>
+            <option value="archery">🎯 ชมรมยิงธนู</option>
+            <option value="badminton">🏸 ชมรมแบดมินตัน</option>
+            <option value="heights_training">🦺 อบรมหลักสูตรการทำงานบนที่สูง</option>
+          </select>
+
+          <!-- Filter Status -->
+          <select id="filter-status" class="form-select" style="width: auto; padding: 8px 12px;" onchange="applyHistoryFilters()">
+            <option value="all">สถานะทั้งหมด</option>
+            <option value="active">🟢 กำลังใช้งาน (ยังไม่ออก)</option>
+            <option value="completed">⚪ ออกจากอาคารแล้ว</option>
+          </select>
+
+          <!-- Filter Date Range -->
+          <select id="filter-date-preset" class="form-select" style="width: auto; padding: 8px 12px;" onchange="applyHistoryFilters()">
+            <option value="all">ทุกช่วงเวลา</option>
+            <option value="today">เฉพาะวันนี้</option>
+            <option value="week">7 วันล่าสุด</option>
+            <option value="month">เดือนนี้</option>
+          </select>
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          พบ <strong id="filtered-count" style="color: #60a5fa;">0</strong> รายการ
+        </div>
+      </div>
+
+      <!-- History Table Container (Desktop / Tablet) -->
+      <div class="table-responsive">
+        <table class="data-table" id="history-table">
+          <thead>
+            <tr>
+              <th>วัน-เวลาเข้า</th>
+              <th>เวลาออก</th>
+              <th>ระยะเวลา</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>สังกัด</th>
+              <th>ชมรม/กิจกรรม</th>
+              <th>สถานะ</th>
+              <th>หมายเหตุ</th>
+              <th style="text-align: center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination / Footer Info -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 0.78rem; color: var(--text-dim);">
+        <div>ฐานข้อมูล: IndexedDB (EGAT_BuildingAccessDB) • รองรับการใช้งานออฟไลน์</div>
+        <div id="table-page-info">แสดงทั้งหมด</div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- VIEW 4: ANALYTICS DASHBOARD (สถิติภาพรวม) -->
+  <main id="view-analytics" class="tab-view">
+    <!-- Stat KPI Summary Cards -->
+    <div class="stats-summary-grid">
+      <div class="stat-box">
+        <span class="stat-label">จำนวนเข้าใช้งานทั้งหมด</span>
+        <span class="stat-number" id="kpi-total-visits">0</span>
+        <span class="stat-trend">📊 ข้อมูลสะสมในระบบ</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">เข้าใช้งานวันนี้</span>
+        <span class="stat-number" id="kpi-today-visits" style="color: #60a5fa;">0</span>
+        <span class="stat-trend" id="kpi-today-trend">คนในวันนี้</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">อยู่ในอาคารขณะนี้</span>
+        <span class="stat-number" id="kpi-active-now" style="color: #34d399;">0</span>
+        <span class="stat-trend">🟢 Active ตอนนี้</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">ชมรมยอดนิยม</span>
+        <span class="stat-number" id="kpi-top-club" style="font-size: 1.25rem; color: #f59e0b; margin-top: 6px;">-</span>
+        <span class="stat-trend" id="kpi-top-club-sub">มีการใช้งานมากที่สุด</span>
+      </div>
+    </div>
+
+    <!-- Charts & Analytics Details -->
+    <div class="main-layout" style="margin-top: 10px;">
+      <!-- Club Usage Breakdown -->
+      <div class="glass-card">
+        <div class="section-title" style="margin-bottom: 16px; color: #fff;">
+          <span>🏆</span> สัดส่วนการใช้งานแยกตามชมรม
+        </div>
+        <div id="analytics-club-bars" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Department Usage Breakdown -->
+      <div class="glass-card">
+        <div class="section-title" style="margin-bottom: 16px; color: #fff;">
+          <span>🏢</span> สถิติผู้ใช้งานแยกตามสังกัด / แผนก
+        </div>
+        <div id="analytics-dept-bars" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 5: SETTINGS & DATABASE MANAGEMENT (ตั้งค่า) -->
+  <main id="view-settings" class="tab-view">
+    <div class="main-layout">
+      <!-- Profile & User Preferences -->
+      <div class="glass-card">
+        <h2 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; color: #fff;">👤 ข้อมูลผู้ใช้งานประจำเครื่อง</h2>
+        <div class="form-group">
+          <label class="form-label">ชื่อ - นามสกุล</label>
+          <input type="text" id="setting-name" class="form-input" placeholder="เช่น นายสมชาย สายใจดี">
+        </div>
+        <div class="form-group">
+          <label class="form-label">สังกัด / ฝ่ายงาน</label>
+          <select id="setting-dept" class="form-select">
+            <!-- Populated by JS DEPTS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">รหัสพนักงาน (ถ้ามี)</label>
+          <input type="text" id="setting-empid" class="form-input" placeholder="เช่น 654321">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ชมรมประจำที่เข้าใช้งานบ่อย</label>
+          <select id="setting-default-club" class="form-select">
+            <option value="basketball">🏀 ชมรมบาสเก็ตบอล</option>
+            <option value="golf">⛳ ชมรมกอล์ฟ</option>
+            <option value="archery">🎯 ชมรมยิงธนู</option>
+            <option value="badminton">🏸 ชมรมแบดมินตัน</option>
+            <option value="heights_training">🦺 อบรมหลักสูตรการทำงานบนที่สูง</option>
+          </select>
+        </div>
+        <button class="btn-checkin-action btn-in" style="font-size: 1rem; padding: 12px;" onclick="saveUserSettings()">
+          บันทึกข้อมูลส่วนตัว
+        </button>
+      </div>
+
+      <!-- Cloud Sync & Database Control -->
+      <div class="glass-card">
+        <h2 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; color: #fff;">💾 จัดการฐานข้อมูลและ Cloud Sync</h2>
+        
+        <div class="form-group">
+          <label class="form-label">Cloud Webhook / Google Apps Script URL (ทางเลือกสำหรับซิงก์กลาง)</label>
+          <input type="url" id="setting-cloud-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">
+            หากตั้งค่า URL ระบบจะส่งสำเนาข้อมูลไปยัง Google Sheet หรือ Backend API กลางของฝ่ายบริหารอัตโนมัติ
+          </p>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn-secondary" onclick="loadSampleDemoData()">
+            <span>🎲</span> โหลดข้อมูลตัวอย่างสำหรับทดสอบ (Demo Records)
+          </button>
+          
+          <label class="btn-secondary" style="cursor: pointer;">
+            <span>📥</span> นำเข้าฐานข้อมูลสำรอง (Import JSON)
+            <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importDatabaseJSON(event)">
+          </label>
+
+          <button class="btn-secondary" style="color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="clearAllData()">
+            <span>🗑️</span> ล้างประวัติทั้งหมดในฐานข้อมูล
+          </button>
+        </div>
+
+        <div style="margin-top: 20px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
+          <strong>โครงสร้างระบบฐานข้อมูล:</strong><br>
+          • Local Storage: IndexedDB ObjectStore (ความจุไม่จำกัด, ความเร็วสูง, ปลอดภัย)<br>
+          • มีไฟล์ <code>database_schema.sql</code> และ <code>google_sheets_apps_script.js</code> อยู่ในโฟลเดอร์โครงการสำหรับนำไปติดตั้งบนคลาวด์
+        </div>
+      </div>
+    </div>
+  </main>
+
+</div><!-- /.app-container -->
+
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="mobile-bottom-nav">
+  <button class="bottom-nav-item active" data-tab="checkin" onclick="switchMainTab('checkin')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>ลงทะเบียน</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="clubs" onclick="switchMainTab('clubs')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    <span>ชมรม</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="history" onclick="switchMainTab('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span>ประวัติ</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="analytics" onclick="switchMainTab('analytics')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>สถิติ</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="settings" onclick="switchMainTab('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>ตั้งค่า</span>
+  </button>
+</nav>
+
+<!-- Modal Setup / Edit Profile -->
+<div class="modal-backdrop" id="modal-profile">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">👤 ข้อมูลผู้ลงทะเบียน</h3>
+      <button class="modal-close-btn" onclick="closeProfileModal()">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ชื่อ - นามสกุล <span style="color:#ef4444;">*</span></label>
+      <input type="text" id="modal-input-name" class="form-input" placeholder="กรอกชื่อ-นามสกุล">
+    </div>
+    <div class="form-group">
+      <label class="form-label">สังกัด / ฝ่ายงาน <span style="color:#ef4444;">*</span></label>
+      <select id="modal-select-dept" class="form-select">
+        <!-- Rendered by JS -->
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">รหัสพนักงาน (ถ้ามี)</label>
+      <input type="text" id="modal-input-empid" class="form-input" placeholder="เช่น 650123">
+    </div>
+    <button class="btn-checkin-action btn-in" style="font-size: 1rem; padding: 14px; margin-top: 10px;" onclick="saveModalProfile()">
+      บันทึกข้อมูลและพร้อมใช้งาน
+    </button>
+  </div>
 </div>
 
 <div id="toast"></div>
 
+<!-- ================================================================= -->
+<!-- APPLICATION LOGIC & DATABASE ENGINE                               -->
+<!-- ================================================================= -->
 <script>
-/* ── Basketball canvas background ── */
-const canvas = document.getElementById('bg');
+/* ─── CONSTANTS & CLUBS MASTER DATA ─── */
+const CLUBS = [
+  {
+    id: 'basketball',
+    name: 'ชมรมบาสเก็ตบอล',
+    enName: 'Basketball Club',
+    icon: '🏀',
+    color: '#f97316',
+    zone: 'คอร์ตบาสเก็ตบอลในร่ม',
+    desc: 'เปิดบริการทุกวัน 16:30 - 20:30 น. พื้นปาร์เก้มาตรฐาน'
+  },
+  {
+    id: 'golf',
+    name: 'ชมรมกอล์ฟ',
+    enName: 'Golf Club',
+    icon: '⛳',
+    color: '#10b981',
+    zone: 'สนามไดรฟ์กอล์ฟ & กรีนพัตต์',
+    desc: 'สนามฝึกวงสวิง 8 ช่องไดรฟ์ และกรีนซ้อมชิป-พัตต์'
+  },
+  {
+    id: 'archery',
+    name: 'ชมรมยิงธนู',
+    enName: 'Archery Club',
+    icon: '🎯',
+    color: '#ef4444',
+    zone: 'ลู่ยิงธนูมาตรฐาน',
+    desc: 'ลู่ยิงระยะ 10ม. และ 18ม. พร้อมเป้ามาตรฐานสากล'
+  },
+  {
+    id: 'badminton',
+    name: 'ชมรมแบดมินตัน',
+    enName: 'Badminton Club',
+    icon: '🏸',
+    color: '#06b6d4',
+    zone: 'คอร์ตแบดมินตัน 1-3',
+    desc: 'สนามปูยางมาตรฐาน 3 คอร์ต พร้อมไฟส่องสว่างแบบ LED'
+  },
+  {
+    id: 'heights_training',
+    name: 'อบรมหลักสูตรการทำงานบนที่สูง',
+    enName: 'Working at Heights Training',
+    icon: '🦺',
+    color: '#eab308',
+    zone: 'ศูนย์ฝึกอบรมการทำงานบนที่สูง / เสาจำลอง',
+    desc: 'หลักสูตรฝึกอบรมและทบทวนการปฏิบัติงานบนที่สูงตามมาตรฐานความปลอดภัย กฟผ.'
+  }
+];
+
+const DEPTS = [
+  'ส่วนกลาง ชธธ.',
+  'อบค.',
+  'อบฟ.',
+  'อบย.',
+  'อคม.',
+  'อรอ.',
+  'อหข.',
+  'อปล.',
+  'ฝ่ายบริหารและบริการทั่วไป',
+  'บุคคลภายนอก / ผู้ติดตาม',
+  'อื่นๆ'
+];
+
+// Fallback Google Form endpoint from original app
+const LEGACY_GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf8rkeKjetfqxsfN7xwrMqtLoQDMCvuXR1utfMWjMaf3WMzZQ/formResponse';
+
+/* ─── INDEXEDDB ENGINE ─── */
+class AppDatabase {
+  constructor() {
+    this.dbName = 'EGAT_BuildingAccessDB';
+    this.dbVersion = 2;
+    this.db = null;
+  }
+
+  async init() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.dbVersion);
+
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('access_logs')) {
+          const store = db.createObjectStore('access_logs', { keyPath: 'id' });
+          store.createIndex('clubId', 'clubId', { unique: false });
+          store.createIndex('status', 'status', { unique: false });
+          store.createIndex('checkInTime', 'checkInTime', { unique: false });
+          store.createIndex('userName', 'userName', { unique: false });
+          store.createIndex('department', 'department', { unique: false });
+        }
+      };
+
+      request.onsuccess = (e) => {
+        this.db = e.target.result;
+        resolve(this.db);
+      };
+
+      request.onerror = (e) => {
+        console.warn('IndexedDB failed, falling back to LocalStorage', e);
+        resolve(null);
+      };
+    });
+  }
+
+  async addLog(record) {
+    if (this.db) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('access_logs', 'readwrite');
+        const store = tx.objectStore('access_logs');
+        const req = store.add(record);
+        req.onsuccess = () => resolve(record);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      // LocalStorage Fallback
+      const logs = this.getLocalStorageLogs();
+      logs.unshift(record);
+      localStorage.setItem('db_fallback_logs', JSON.stringify(logs));
+      return record;
+    }
+  }
+
+  async updateLog(record) {
+    if (this.db) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('access_logs', 'readwrite');
+        const store = tx.objectStore('access_logs');
+        const req = store.put(record);
+        req.onsuccess = () => resolve(record);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      const logs = this.getLocalStorageLogs();
+      const idx = logs.findIndex(l => l.id === record.id);
+      if (idx !== -1) logs[idx] = record;
+      localStorage.setItem('db_fallback_logs', JSON.stringify(logs));
+      return record;
+    }
+  }
+
+  async deleteLog(id) {
+    if (this.db) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('access_logs', 'readwrite');
+        const store = tx.objectStore('access_logs');
+        const req = store.delete(id);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      let logs = this.getLocalStorageLogs();
+      logs = logs.filter(l => l.id !== id);
+      localStorage.setItem('db_fallback_logs', JSON.stringify(logs));
+      return true;
+    }
+  }
+
+  async getAllLogs() {
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction('access_logs', 'readonly');
+        const store = tx.objectStore('access_logs');
+        const req = store.getAll();
+        req.onsuccess = () => {
+          // Sort newest first
+          const sorted = (req.result || []).sort((a,b) => new Date(b.checkInTime) - new Date(a.checkInTime));
+          resolve(sorted);
+        };
+        req.onerror = () => resolve([]);
+      });
+    } else {
+      return this.getLocalStorageLogs();
+    }
+  }
+
+  async clearAll() {
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction('access_logs', 'readwrite');
+        const store = tx.objectStore('access_logs');
+        const req = store.clear();
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => resolve(false);
+      });
+    } else {
+      localStorage.removeItem('db_fallback_logs');
+      return true;
+    }
+  }
+
+  getLocalStorageLogs() {
+    try {
+      return JSON.parse(localStorage.getItem('db_fallback_logs') || '[]');
+    } catch(e) { return []; }
+  }
+}
+
+const appDB = new AppDatabase();
+
+/* ─── STATE MANAGEMENT ─── */
+let currentClubId = localStorage.getItem('snb_active_club') || 'basketball';
+let activeLogsCache = [];
+let allLogsCache = [];
+
+function getSelectedClub() {
+  return CLUBS.find(c => c.id === currentClubId) || CLUBS[0];
+}
+
+function getUserProfile() {
+  const p = localStorage.getItem('profile');
+  if (!p) return null;
+  try { return JSON.parse(p); } catch(e) { return null; }
+}
+
+function setUserProfile(p) {
+  localStorage.setItem('profile', JSON.stringify(p));
+}
+
+function getCurrentSession() {
+  const s = localStorage.getItem('session');
+  if (!s) return null;
+  try { return JSON.parse(s); } catch(e) { return null; }
+}
+
+function setSession(s) {
+  localStorage.setItem('session', JSON.stringify(s));
+}
+
+function clearSession() {
+  localStorage.removeItem('session');
+}
+
+/* ─── UTILITIES & FORMATTING ─── */
+function pad(n) { return String(n).padStart(2, '0'); }
+
+const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THAI_DAYS = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
+
+function formatThaiDate(d) {
+  return `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+function formatThaiTime(d) {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())} น.`;
+}
+
+function formatFullDateTime(d) {
+  return `${formatThaiDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function generateRecordId() {
+  const now = new Date();
+  const ymd = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+  const rnd = Math.floor(1000 + Math.random() * 9000);
+  return `REC-${ymd}-${rnd}`;
+}
+
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = (isError ? '⚠️ ' : '✓ ') + msg;
+  el.className = 'show' + (isError ? ' error' : '');
+  setTimeout(() => el.className = '', 2800);
+}
+
+/* ─── UI NAVIGATION ─── */
+function switchMainTab(tabId) {
+  // Update desktop nav
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  // Update mobile bottom nav
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  // Update views
+  document.querySelectorAll('.tab-view').forEach(view => {
+    view.classList.remove('active');
+  });
+  const target = document.getElementById(`view-${tabId}`);
+  if (target) target.classList.add('active');
+
+  // Trigger data refreshes on tab open
+  if (tabId === 'history') {
+    loadHistoryTable();
+  } else if (tabId === 'analytics') {
+    loadAnalytics();
+  } else if (tabId === 'settings') {
+    loadSettingsInputs();
+  }
+}
+
+/* ─── CLUB SELECTOR & THEME ENGINE ─── */
+function renderClubTabs() {
+  const container = document.getElementById('club-tabs-list');
+  container.innerHTML = CLUBS.map(club => {
+    const isActive = club.id === currentClubId;
+    // Count active occupants in this club
+    const activeInClub = activeLogsCache.filter(l => l.clubId === club.id).length;
+    return `
+      <div class="club-tab-item ${isActive ? 'active' : ''}" 
+           data-club="${club.id}" 
+           style="--club-color: ${club.color}; --club-glow: ${club.color}33;"
+           onclick="selectClub('${club.id}')">
+        <span class="club-tab-icon">${club.icon}</span>
+        <div class="club-tab-text">
+          <span class="club-tab-name">${club.name}</span>
+          <span class="club-tab-count">${activeInClub > 0 ? `🟢 กำลังเล่น ${activeInClub} คน` : 'ว่าง'}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectClub(clubId) {
+  currentClubId = clubId;
+  localStorage.setItem('snb_active_club', clubId);
+  document.body.setAttribute('data-club', clubId);
+
+  const club = getSelectedClub();
+  // Ambient glow color
+  const glow = document.getElementById('ambient-glow');
+  if (glow) glow.style.background = `radial-gradient(circle, ${club.color}40 0%, transparent 70%)`;
+
+  // Update summary header
+  const sumText = document.getElementById('active-club-summary-text');
+  if (sumText) sumText.textContent = `กำลังเลือก: ${club.name}`;
+
+  // Update banner in check-in card
+  const bIcon = document.getElementById('banner-club-icon');
+  const bName = document.getElementById('banner-club-name');
+  const bZone = document.getElementById('banner-club-zone');
+  if (bIcon) bIcon.textContent = club.icon;
+  if (bName) bName.textContent = club.name;
+  if (bZone) bZone.textContent = club.zone;
+
+  renderClubTabs();
+  renderCheckInArea();
+  updateCanvasTheme(club);
+}
+
+/* ─── CANVAS BACKGROUND ENGINE ─── */
+const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
+let particles = [];
 
-function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-resize();
-window.addEventListener('resize', resize);
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-function drawBall(x, y, r, alpha) {
+function initParticles() {
+  particles = Array.from({ length: 14 }, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: 12 + Math.random() * 24,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    rot: Math.random() * Math.PI * 2,
+    vrot: (Math.random() - 0.5) * 0.008,
+    alpha: 0.05 + Math.random() * 0.08
+  }));
+}
+initParticles();
+
+function drawClubEquipment(x, y, r, alpha, club) {
   ctx.save();
   ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
 
-  // ball body
-  const g = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
-  g.addColorStop(0, '#e85d04');
-  g.addColorStop(0.6, '#c2410c');
-  g.addColorStop(1, '#7c2d12');
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fillStyle = g;
-  ctx.fill();
-
-  // lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-  ctx.lineWidth = r * 0.07;
-
-  // horizontal line
-  ctx.beginPath();
-  ctx.moveTo(x - r, y);
-  ctx.lineTo(x + r, y);
-  ctx.stroke();
-
-  // vertical line
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.01, 0, Math.PI * 2); // center dot
-  ctx.beginPath();
-  ctx.moveTo(x, y - r);
-  ctx.lineTo(x, y + r);
-  ctx.stroke();
-
-  // left curve
-  ctx.beginPath();
-  ctx.moveTo(x - r * 0.2, y - r);
-  ctx.bezierCurveTo(x - r * 0.6, y - r * 0.5, x - r * 0.6, y + r * 0.5, x - r * 0.2, y + r);
-  ctx.stroke();
-
-  // right curve
-  ctx.beginPath();
-  ctx.moveTo(x + r * 0.2, y - r);
-  ctx.bezierCurveTo(x + r * 0.6, y - r * 0.5, x + r * 0.6, y + r * 0.5, x + r * 0.2, y + r);
-  ctx.stroke();
-
-  // clip to circle for clean edges
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.clip();
+  if (club.id === 'basketball') {
+    // Basketball
+    const grad = ctx.createRadialGradient(-r*0.3, -r*0.3, r*0.1, 0, 0, r);
+    grad.addColorStop(0, '#f97316');
+    grad.addColorStop(1, '#9a3412');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = r * 0.08;
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
+  } else if (club.id === 'golf') {
+    // Golf ball
+    const grad = ctx.createRadialGradient(-r*0.3, -r*0.3, r*0.1, 0, 0, r);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(1, '#6ee7b7');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  } else if (club.id === 'archery') {
+    // Target concentric circles
+    const colors = ['#ef4444', '#ffffff', '#3b82f6', '#fbbf24'];
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.arc(0, 0, r * (1 - i*0.22), 0, Math.PI * 2);
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fill();
+    }
+  } else if (club.id === 'heights_training') {
+    // Safety helmet & harness ring
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.85, Math.PI, 0, false);
+    ctx.fillStyle = '#eab308';
+    ctx.fill();
+    ctx.lineWidth = r * 0.15;
+    ctx.strokeStyle = '#ca8a04';
+    ctx.stroke();
+    // Safety rim
+    ctx.beginPath();
+    ctx.moveTo(-r, 0);
+    ctx.lineTo(r, 0);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = r * 0.1;
+    ctx.stroke();
+  } else {
+    // Ambient geometric glow
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = club.color;
+    ctx.fill();
+  }
 
   ctx.restore();
 }
 
-const balls = Array.from({length: 9}, (_, i) => ({
-  x: Math.random() * innerWidth,
-  y: Math.random() * innerHeight,
-  r: 20 + Math.random() * 45,
-  vx: (Math.random() - 0.5) * 0.5,
-  vy: (Math.random() - 0.5) * 0.5,
-  rot: Math.random() * Math.PI * 2,
-  vrot: (Math.random() - 0.5) * 0.01,
-  alpha: 0.06 + Math.random() * 0.1,
-}));
-
-function animate() {
+function animateCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const b of balls) {
-    b.x += b.vx;
-    b.y += b.vy;
-    b.rot += b.vrot;
-    if (b.x < -b.r) b.x = canvas.width + b.r;
-    if (b.x > canvas.width + b.r) b.x = -b.r;
-    if (b.y < -b.r) b.y = canvas.height + b.r;
-    if (b.y > canvas.height + b.r) b.y = -b.r;
+  const club = getSelectedClub();
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vrot;
+    if (p.x < -p.r*2) p.x = canvas.width + p.r*2;
+    if (p.x > canvas.width + p.r*2) p.x = -p.r*2;
+    if (p.y < -p.r*2) p.y = canvas.height + p.r*2;
+    if (p.y > canvas.height + p.r*2) p.y = -p.r*2;
+
     ctx.save();
-    ctx.translate(b.x, b.y);
-    ctx.rotate(b.rot);
-    ctx.translate(-b.x, -b.y);
-    drawBall(b.x, b.y, b.r, b.alpha);
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.translate(-p.x, -p.y);
+    drawClubEquipment(p.x, p.y, p.r, p.alpha, club);
     ctx.restore();
   }
-  requestAnimationFrame(animate);
+  requestAnimationFrame(animateCanvas);
 }
-animate();
+animateCanvas();
 
-/* ── Ripple effect ── */
-document.addEventListener('click', e => {
-  const btn = e.target.closest('.btn');
-  if (!btn) return;
-  const ripple = document.createElement('span');
-  ripple.className = 'ripple';
-  const rect = btn.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
-  btn.appendChild(ripple);
-  ripple.addEventListener('animationend', () => ripple.remove());
-});
-
-/* ── App logic ── */
-const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf8rkeKjetfqxsfN7xwrMqtLoQDMCvuXR1utfMWjMaf3WMzZQ/formResponse';
-const DEPTS = ['ส่วนกลาง ชธธ.','อบค.','อบฟ.','อบย.','อคม.','อรอ.','อหข.','อปล.','อื่นๆ'];
-
-function pad(n) { return String(n).padStart(2,'0'); }
-function now() { return new Date(); }
-function fmtTime(d) { return pad(d.getHours())+':'+pad(d.getMinutes()); }
-function fmtDate(d) {
-  return `${d.getDate()} ${['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()]} ${d.getFullYear()+543}`;
-}
-
-function getProfile() { return JSON.parse(localStorage.getItem('profile')||'null'); }
-function getSession() { return JSON.parse(localStorage.getItem('session')||'null'); }
-function saveProfile(p) { localStorage.setItem('profile', JSON.stringify(p)); }
-function saveSession(s) { localStorage.setItem('session', JSON.stringify(s)); }
-function clearSession() { localStorage.removeItem('session'); }
-
-function toast(msg, err=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show' + (err?' err':'');
-  setTimeout(() => t.className = '', 2500);
-}
-
-async function submitForm(profile, entryDate, entryTime, exitTime) {
-  const d = entryDate;
-  const body = new URLSearchParams({
-    'entry.1168058050': profile.name,
-    'entry.2127435980': profile.dept,
-    'entry.1399129267_year':  d.getFullYear(),
-    'entry.1399129267_month': d.getMonth()+1,
-    'entry.1399129267_day':   d.getDate(),
-    'entry.1137676593_hour':   pad(entryTime.getHours()),
-    'entry.1137676593_minute': pad(entryTime.getMinutes()),
-    'entry.810264308_hour':    pad(exitTime.getHours()),
-    'entry.810264308_minute':  pad(exitTime.getMinutes()),
+function updateCanvasTheme(club) {
+  // Smoothly trigger subtle particle reaction
+  particles.forEach(p => {
+    p.alpha = 0.05 + Math.random() * 0.08;
   });
+}
+
+/* ─── LIVE CLOCK & TIMER ─── */
+function startLiveClock() {
+  function tick() {
+    const now = new Date();
+    const clockEl = document.getElementById('live-clock');
+    const dateEl = document.getElementById('live-date');
+    const todayDayEl = document.getElementById('today-dayname');
+
+    if (clockEl) {
+      clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    if (dateEl) {
+      dateEl.textContent = `${THAI_DAYS[now.getDay()]}ที่ ${formatThaiDate(now)}`;
+    }
+    if (todayDayEl) {
+      todayDayEl.textContent = THAI_DAYS[now.getDay()];
+    }
+
+    // Update active session duration counter if user is checked in
+    const timerEl = document.getElementById('session-elapsed-timer');
+    if (timerEl) {
+      const session = getCurrentSession();
+      if (session && session.checkInTime) {
+        const diffMs = Math.max(0, now - new Date(session.checkInTime));
+        const diffMins = Math.floor(diffMs / 60000);
+        const hrs = Math.floor(diffMins / 60);
+        const mins = diffMins % 60;
+        const secs = Math.floor((diffMs % 60000) / 1000);
+        timerEl.textContent = `${pad(hrs)} ชม. ${pad(mins)} นาที ${pad(secs)} วิ`;
+      }
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ─── USER PROFILE ─── */
+function initProfileDropdowns() {
+  const modalDept = document.getElementById('modal-select-dept');
+  const setDept = document.getElementById('setting-dept');
+  const optionsHtml = DEPTS.map(d => `<option value="${d}">${d}</option>`).join('');
+  if (modalDept) modalDept.innerHTML = optionsHtml;
+  if (setDept) setDept.innerHTML = optionsHtml;
+}
+
+function refreshProfileDisplay() {
+  const profile = getUserProfile();
+  const nameEl = document.getElementById('display-user-name');
+  const deptEl = document.getElementById('display-user-dept');
+  const avatarEl = document.getElementById('user-avatar-initial');
+
+  if (profile && profile.name) {
+    if (nameEl) nameEl.textContent = profile.name;
+    if (deptEl) deptEl.textContent = `สังกัด: ${profile.dept || 'ทั่วไป'}`;
+    if (avatarEl) avatarEl.textContent = profile.name.trim().charAt(0) || '👤';
+  } else {
+    if (nameEl) nameEl.textContent = 'กรุณาตั้งค่าชื่อผู้ใช้';
+    if (deptEl) deptEl.textContent = 'กดแก้ไขเพื่อกรอกชื่อและสังกัด';
+    if (avatarEl) avatarEl.textContent = '?';
+  }
+}
+
+function openProfileModal() {
+  const profile = getUserProfile() || {};
+  document.getElementById('modal-input-name').value = profile.name || '';
+  if (profile.dept) document.getElementById('modal-select-dept').value = profile.dept;
+  document.getElementById('modal-input-empid').value = profile.empId || '';
+  document.getElementById('modal-profile').classList.add('show');
+  setTimeout(() => document.getElementById('modal-input-name').focus(), 100);
+}
+
+function closeProfileModal() {
+  document.getElementById('modal-profile').classList.remove('show');
+}
+
+function saveModalProfile() {
+  const name = document.getElementById('modal-input-name').value.trim();
+  const dept = document.getElementById('modal-select-dept').value;
+  const empId = document.getElementById('modal-input-empid').value.trim();
+
+  if (!name) {
+    toast('กรุณากรอกชื่อ-นามสกุลก่อนบันทึก', true);
+    return;
+  }
+
+  const profile = { name, dept, empId };
+  setUserProfile(profile);
+  closeProfileModal();
+  refreshProfileDisplay();
+  renderCheckInArea();
+  toast('บันทึกข้อมูลเรียบร้อย ✓');
+}
+
+/* ─── CHECK-IN & CHECK-OUT CORE FLOW ─── */
+function renderCheckInArea() {
+  const area = document.getElementById('checkin-action-area');
+  const profile = getUserProfile();
+  const session = getCurrentSession();
+  const noteBox = document.getElementById('note-input-container');
+
+  if (!profile || !profile.name) {
+    if (noteBox) noteBox.style.display = 'none';
+    area.innerHTML = `
+      <div style="background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.4); border-radius: var(--radius-lg); padding: 20px; text-align: center;">
+        <p style="font-size: 0.95rem; margin-bottom: 12px; color: #93c5fd;">ยินดีต้อนรับ! เริ่มต้นใช้งานด้วยการระบุชื่อและสังกัด</p>
+        <button class="btn-checkin-action btn-in" style="font-size: 1rem; padding: 12px;" onclick="openProfileModal()">
+          ✍️ ระบุชื่อและสังกัด (ครั้งแรก)
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  if (session && session.status === 'active') {
+    // Current user is already checked in! Show Check-out controls
+    if (noteBox) noteBox.style.display = 'none';
+    const entryDate = new Date(session.checkInTime);
+    area.innerHTML = `
+      <div class="active-session-box">
+        <div style="font-size: 0.78rem; color: #34d399; font-weight: 600; text-transform: uppercase;">
+          🟢 กำลังใช้งานอาคารอยู่ในขณะนี้
+        </div>
+        <div class="session-timer-big" id="session-elapsed-timer">00 ชม. 00 นาที 00 วิ</div>
+        <div class="session-meta-row">
+          <div>เวลาเข้า: <strong>${formatThaiTime(entryDate)}</strong></div>
+          <div>ชมรม: <strong>${session.clubName || 'อาคารทั่วไป'}</strong></div>
+        </div>
+      </div>
+
+      <button class="btn-checkin-action btn-out" onclick="doCheckOut()">
+        🚪 ลงทะเบียนออกจากอาคาร (Check-out)
+      </button>
+
+      <div style="text-align: center; margin-top: 14px;">
+        <span style="font-size: 0.75rem; color: var(--text-dim); cursor: pointer; text-decoration: underline;" onclick="cancelSessionPrompt()">
+          ยกเลิกรายการนี้ (กรณีลืมกดออกหรือกดผิด)
+        </span>
+      </div>
+    `;
+  } else {
+    // Current user is ready to check in
+    if (noteBox) noteBox.style.display = 'block';
+    const club = getSelectedClub();
+    area.innerHTML = `
+      <button class="btn-checkin-action btn-in" onclick="doCheckIn()">
+        <span>${club.icon}</span> ลงทะเบียนเข้าใช้งาน ${club.name}
+      </button>
+    `;
+  }
+}
+
+async function doCheckIn() {
+  const profile = getUserProfile();
+  if (!profile || !profile.name) {
+    openProfileModal();
+    return;
+  }
+
+  const club = getSelectedClub();
+  const note = (document.getElementById('checkin-note')?.value || '').trim();
+  const now = new Date();
+  const recordId = generateRecordId();
+
+  const newRecord = {
+    id: recordId,
+    userName: profile.name,
+    department: profile.dept || 'ทั่วไป',
+    empId: profile.empId || '',
+    clubId: club.id,
+    clubName: club.name,
+    zone: club.zone,
+    checkInTime: now.toISOString(),
+    checkOutTime: null,
+    durationMinutes: 0,
+    status: 'active',
+    note: note,
+    createdAt: now.toISOString()
+  };
+
   try {
-    await fetch(FORM_URL, { method:'POST', mode:'no-cors', body });
-    return true;
-  } catch(e) { return false; }
-}
+    // 1. Save to Database
+    await appDB.addLog(newRecord);
 
-function render() {
-  const app = document.getElementById('app');
-  const profile = getProfile();
-  const session = getSession();
-  if (!profile) { renderSetup(app); return; }
-  if (!session) { renderCheckIn(app, profile); }
-  else { renderCheckOut(app, profile, session); }
-}
+    // 2. Save active local session
+    setSession(newRecord);
 
-function renderSetup(app) {
-  app.innerHTML = `
-    <div class="info">ตั้งค่าครั้งแรกครั้งเดียว</div>
-    <label>ชื่อ-นามสกุล</label>
-    <input id="iname" placeholder="กรอกชื่อ-นามสกุล" autocomplete="name">
-    <label>สังกัด</label>
-    <select id="idept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select>
-    <button class="btn btn-save" onclick="doSaveProfile()">บันทึกและเริ่มใช้งาน</button>
-  `;
-  document.getElementById('iname').focus();
-}
+    // 3. Clear note input
+    if (document.getElementById('checkin-note')) document.getElementById('checkin-note').value = '';
 
-function doSaveProfile() {
-  const name = document.getElementById('iname').value.trim();
-  const dept = document.getElementById('idept').value;
-  if (!name) { toast('กรอกชื่อก่อนนะ', true); return; }
-  saveProfile({ name, dept });
-  render();
-}
+    // 4. Trigger Haptic Vibration if supported on mobile
+    if (navigator.vibrate) navigator.vibrate([20, 40]);
 
-function renderCheckIn(app, profile) {
-  const t = now();
-  app.innerHTML = `
-    <div class="info">สวัสดี 👋</div>
-    <div class="val">${profile.name}</div>
-    <div class="info">สังกัด ${profile.dept}</div>
-    <div class="time-big" id="clock">${fmtTime(t)}</div>
-    <div class="date-sub">${fmtDate(t)}</div>
-    <button class="btn btn-in" onclick="doCheckIn()">🏀 เข้าสนาม</button>
-    <div class="link" onclick="resetProfile()">เปลี่ยนชื่อ / สังกัด</div>
-  `;
-  const iv = setInterval(() => {
-    const el = document.getElementById('clock');
-    if (!el) { clearInterval(iv); return; }
-    el.textContent = fmtTime(now());
-  }, 1000);
-}
+    // 5. Cloud Sync in background (Google Sheets or Webhook if configured)
+    syncRecordToCloud(newRecord, 'checkIn');
 
-function doCheckIn() {
-  saveSession({ ts: now().toISOString() });
-  render();
-}
-
-function renderCheckOut(app, profile, session) {
-  const entryTime = new Date(session.ts);
-  app.innerHTML = `
-    <div class="info">สวัสดี 👋</div>
-    <div class="val">${profile.name}</div>
-    <div class="session-info">
-      <div class="info">เข้าสนามเมื่อ</div>
-      <div class="val" style="color:#4ade80;font-size:1.5rem">${fmtTime(entryTime)}</div>
-      <div class="info">${fmtDate(entryTime)}</div>
-    </div>
-    <button class="btn btn-out" onclick="doCheckOut()">🚪 ออกจากสนาม</button>
-    <div class="link" onclick="doCancel()">ยกเลิก (ลืมกดออก)</div>
-  `;
+    toast(`ลงทะเบียนเข้าใช้งาน ${club.name} สำเร็จ!`);
+    refreshDataViews();
+  } catch(err) {
+    console.error('Check-in error', err);
+    toast('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่', true);
+  }
 }
 
 async function doCheckOut() {
-  const profile = getProfile();
-  const session = getSession();
-  const entryTime = new Date(session.ts);
-  const exitTime = now();
+  const session = getCurrentSession();
+  if (!session) return;
+
   const btn = document.querySelector('.btn-out');
-  btn.textContent = 'กำลังบันทึก...';
-  btn.disabled = true;
-  const ok = await submitForm(profile, entryTime, entryTime, exitTime);
-  clearSession();
-  if (ok) toast('บันทึกเรียบร้อย ✓');
-  else toast('ส่งไม่ได้ ลองใหม่', true);
-  setTimeout(render, 1500);
+  if (btn) {
+    btn.textContent = '⏳ กำลังบันทึกการออก...';
+    btn.disabled = true;
+  }
+
+  const exitTime = new Date();
+  const entryTime = new Date(session.checkInTime);
+  const durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
+
+  session.checkOutTime = exitTime.toISOString();
+  session.durationMinutes = durationMinutes;
+  session.status = 'completed';
+
+  try {
+    // 1. Update Database Record
+    await appDB.updateLog(session);
+
+    // 2. Clear Session
+    clearSession();
+
+    // 3. Mobile haptic feedback
+    if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+
+    // 4. Cloud Sync
+    syncRecordToCloud(session, 'checkOut');
+
+    // 5. Optional Legacy Google Form submission if basketball
+    if (session.clubId === 'basketball') {
+      submitToLegacyGoogleForm(session, entryTime, exitTime);
+    }
+
+    toast(`ลงทะเบียนออกเรียบร้อย (ใช้งานไป ${durationMinutes} นาที) ✓`);
+    refreshDataViews();
+  } catch(err) {
+    console.error('Check-out error', err);
+    toast('ไม่สามารถบันทึกได้ ลองใหม่อีกครั้ง', true);
+    if (btn) {
+      btn.textContent = '🚪 ลงทะเบียนออกจากอาคาร (Check-out)';
+      btn.disabled = false;
+    }
+  }
 }
 
-function doCancel() {
-  if (confirm('ยืนยันยกเลิกการเข้าสนามครั้งนี้?')) { clearSession(); render(); }
+function cancelSessionPrompt() {
+  if (confirm('คุณต้องการยกเลิกการลงทะเบียนครั้งนี้หรือไม่? (ข้อมูลจะไม่ถูกนับเป็นประวัติสมบูรณ์)')) {
+    const session = getCurrentSession();
+    if (session) {
+      session.status = 'cancelled';
+      appDB.updateLog(session);
+    }
+    clearSession();
+    toast('ยกเลิกรายการเรียบร้อย');
+    refreshDataViews();
+  }
 }
 
-function resetProfile() {
-  if (confirm('รีเซ็ตชื่อและสังกัด?')) { clearSession(); localStorage.removeItem('profile'); render(); }
+/* ─── LEGACY GOOGLE FORM INTEGRATION ─── */
+async function submitToLegacyGoogleForm(session, entryTime, exitTime) {
+  try {
+    const body = new URLSearchParams({
+      'entry.1168058050': session.userName,
+      'entry.2127435980': session.department,
+      'entry.1399129267_year': entryTime.getFullYear(),
+      'entry.1399129267_month': entryTime.getMonth() + 1,
+      'entry.1399129267_day': entryTime.getDate(),
+      'entry.1137676593_hour': pad(entryTime.getHours()),
+      'entry.1137676593_minute': pad(entryTime.getMinutes()),
+      'entry.810264308_hour': pad(exitTime.getHours()),
+      'entry.810264308_minute': pad(exitTime.getMinutes()),
+    });
+    await fetch(LEGACY_GOOGLE_FORM_URL, { method: 'POST', mode: 'no-cors', body });
+  } catch(e) {
+    // Non-critical, background sync
+  }
 }
 
-render();
+/* ─── CLOUD WEBHOOK / GOOGLE APPS SCRIPT SYNC ─── */
+async function syncRecordToCloud(record, action) {
+  const url = localStorage.getItem('snb_cloud_url');
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...record, action })
+    });
+  } catch(e) {
+    console.warn('Cloud sync offline or blocked', e);
+  }
+}
+
+/* ─── DATA REFRESH & DASHBOARD VIEWS ─── */
+async function refreshDataViews() {
+  const allLogs = await appDB.getAllLogs();
+  allLogsCache = allLogs;
+  activeLogsCache = allLogs.filter(l => l.status === 'active');
+
+  // Update header counter
+  const headerActiveCount = document.getElementById('header-active-count');
+  if (headerActiveCount) headerActiveCount.textContent = activeLogsCache.length;
+
+  const activeBadge = document.getElementById('active-count-badge');
+  if (activeBadge) activeBadge.textContent = `${activeLogsCache.length} คน`;
+
+  // Update club tabs counter
+  renderClubTabs();
+  renderCheckInArea();
+  renderClubsQuickGrid();
+  renderActiveMembersList();
+}
+
+function renderClubsQuickGrid() {
+  const container = document.getElementById('clubs-quick-grid');
+  if (!container) return;
+
+  container.innerHTML = CLUBS.map(club => {
+    const activeCount = activeLogsCache.filter(l => l.clubId === club.id).length;
+    return `
+      <div class="club-card-widget" style="--item-accent: ${club.color};" onclick="selectClub('${club.id}')">
+        <div class="club-card-top">
+          <span class="club-card-icon">${club.icon}</span>
+          <span class="club-active-tag">${activeCount > 0 ? `🟢 ${activeCount} คน` : 'พร้อมใช้งาน'}</span>
+        </div>
+        <div class="club-card-title">${club.name}</div>
+        <div class="club-card-desc">${club.zone}</div>
+        <div class="club-card-action">
+          <span>คลิกเพื่อเลือกใช้งาน</span>
+          <span>→</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Also render full directory if on Clubs tab
+  const dirContainer = document.getElementById('clubs-full-directory');
+  if (dirContainer) {
+    dirContainer.innerHTML = CLUBS.map(club => {
+      const activeCount = activeLogsCache.filter(l => l.clubId === club.id).length;
+      return `
+        <div class="glass-card" style="border-top: 4px solid ${club.color};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div style="font-size: 2.4rem;">${club.icon}</div>
+            <span class="status-tag ${activeCount > 0 ? 'status-active' : 'status-completed'}">
+              ${activeCount > 0 ? `🟢 กำลังเล่น ${activeCount} คน` : 'ว่าง'}
+            </span>
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 4px;">${club.name}</h3>
+          <p style="font-size: 0.78rem; color: #60a5fa; margin-bottom: 8px;">${club.zone}</p>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">${club.desc}</p>
+          <button class="btn-secondary" style="width: 100%; justify-content: center;" onclick="selectClub('${club.id}'); switchMainTab('checkin');">
+            ลงทะเบียนเข้าชมรมนี้
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function renderActiveMembersList() {
+  const container = document.getElementById('active-members-list');
+  if (!container) return;
+
+  if (activeLogsCache.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-dim); padding: 24px; font-size: 0.85rem;">
+        ยังไม่มีผู้เข้าใช้งานในขณะนี้
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = activeLogsCache.map(log => {
+    const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
+    const checkInTime = new Date(log.checkInTime);
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #fff;">${log.userName}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${log.department} • เข้าเมื่อ ${formatThaiTime(checkInTime)}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge-club-tag" style="background: rgba(255,255,255,0.08); color: #fff;">
+            ${club.icon} ${club.name}
+          </span>
+          <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.7rem; color: #f87171;" onclick="forceCheckOutLog('${log.id}')" title="เช็คเอาต์แทน">
+            ออก
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function forceCheckOutLog(id) {
+  if (confirm('ยืนยันลงทะเบียนออกจากอาคารให้รายการนี้?')) {
+    const log = allLogsCache.find(l => l.id === id);
+    if (log) {
+      const exitTime = new Date();
+      const entryTime = new Date(log.checkInTime);
+      log.checkOutTime = exitTime.toISOString();
+      log.durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
+      log.status = 'completed';
+      await appDB.updateLog(log);
+
+      // If current user session was this log, clear it
+      const currentSession = getCurrentSession();
+      if (currentSession && currentSession.id === id) clearSession();
+
+      toast('บันทึกการออกเรียบร้อย');
+      refreshDataViews();
+      loadHistoryTable();
+    }
+  }
+}
+
+/* ─── HISTORY & EXPORT ENGINE ─── */
+let filteredLogs = [];
+
+async function loadHistoryTable() {
+  allLogsCache = await appDB.getAllLogs();
+  applyHistoryFilters();
+}
+
+function applyHistoryFilters() {
+  const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
+  const clubFilter = document.getElementById('filter-club')?.value || 'all';
+  const statusFilter = document.getElementById('filter-status')?.value || 'all';
+  const datePreset = document.getElementById('filter-date-preset')?.value || 'all';
+
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+
+  filteredLogs = allLogsCache.filter(log => {
+    // Search match
+    if (search) {
+      const target = `${log.userName} ${log.department} ${log.note || ''} ${log.id}`.toLowerCase();
+      if (!target.includes(search)) return false;
+    }
+    // Club filter
+    if (clubFilter !== 'all' && log.clubId !== clubFilter) return false;
+    // Status filter
+    if (statusFilter !== 'all' && log.status !== statusFilter) return false;
+    // Date filter
+    if (datePreset !== 'all') {
+      const logDate = new Date(log.checkInTime);
+      const logYMD = `${logDate.getFullYear()}-${pad(logDate.getMonth()+1)}-${pad(logDate.getDate())}`;
+      if (datePreset === 'today') {
+        if (logYMD !== todayStr) return false;
+      } else if (datePreset === 'week') {
+        const diffDays = (now - logDate) / (1000 * 60 * 60 * 24);
+        if (diffDays > 7 || diffDays < 0) return false;
+      } else if (datePreset === 'month') {
+        if (logDate.getMonth() !== now.getMonth() || logDate.getFullYear() !== now.getFullYear()) return false;
+      }
+    }
+    return true;
+  });
+
+  const countEl = document.getElementById('filtered-count');
+  if (countEl) countEl.textContent = filteredLogs.length;
+
+  renderHistoryTableRows();
+}
+
+function renderHistoryTableRows() {
+  const tbody = document.getElementById('history-table-body');
+  if (!tbody) return;
+
+  if (filteredLogs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 40px;">
+          ไม่พบประวัติการใช้งานตามเงื่อนไขที่เลือก
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filteredLogs.map(log => {
+    const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
+    const entryDate = new Date(log.checkInTime);
+    const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+    
+    let durationText = '-';
+    if (log.durationMinutes) {
+      const hrs = Math.floor(log.durationMinutes / 60);
+      const mins = log.durationMinutes % 60;
+      durationText = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
+    } else if (log.status === 'active') {
+      durationText = '<span style="color:#34d399;">กำลังใช้งาน</span>';
+    }
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 500;">${formatThaiDate(entryDate)}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${formatThaiTime(entryDate)}</div>
+        </td>
+        <td>
+          ${exitDate ? `
+            <div>${formatThaiTime(exitDate)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${formatThaiDate(exitDate)}</div>
+          ` : '<span style="color: #94a3b8;">ยังไม่ออก</span>'}
+        </td>
+        <td>${durationText}</td>
+        <td>
+          <div style="font-weight: 600;">${log.userName}</div>
+          <div style="font-size: 0.72rem; color: var(--text-dim);">${log.id}</div>
+        </td>
+        <td>${log.department}</td>
+        <td>
+          <span class="badge-club-tag" style="background: rgba(255,255,255,0.06);">
+            ${club.icon} ${club.name}
+          </span>
+        </td>
+        <td>
+          <span class="status-tag ${log.status === 'active' ? 'status-active' : 'status-completed'}">
+            ${log.status === 'active' ? '🟢 กำลังใช้งาน' : (log.status === 'cancelled' ? '❌ ยกเลิก' : '⚪ เสร็จสิ้น')}
+          </span>
+        </td>
+        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
+          ${log.note || '-'}
+        </td>
+        <td style="text-align: center;">
+          <div style="display: inline-flex; gap: 4px;">
+            ${log.status === 'active' ? `
+              <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #34d399;" onclick="forceCheckOutLog('${log.id}')">
+                เช็คเอาต์
+              </button>
+            ` : ''}
+            <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #ef4444;" onclick="deleteRecord('${log.id}')" title="ลบรายการ">
+              ลบ
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function deleteRecord(id) {
+  if (confirm('ยืนยันลบรายการบันทึกนี้?')) {
+    await appDB.deleteLog(id);
+    toast('ลบรายการเรียบร้อย');
+    refreshDataViews();
+    loadHistoryTable();
+  }
+}
+
+/* ─── EXPORT TO EXCEL (.XLSX) VIA SHEETJS ─── */
+function exportToExcel() {
+  if (filteredLogs.length === 0) {
+    toast('ไม่มีข้อมูลที่จะ Export', true);
+    return;
+  }
+
+  // Format data specifically for Excel
+  const excelData = filteredLogs.map((log, index) => {
+    const entryDate = new Date(log.checkInTime);
+    const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+    return {
+      'ลำดับ': index + 1,
+      'รหัสบันทึก': log.id,
+      'ชื่อ-นามสกุล': log.userName,
+      'สังกัด/ฝ่าย': log.department,
+      'รหัสพนักงาน': log.empId || '-',
+      'ชมรม/กิจกรรม': log.clubName,
+      'พื้นที่ใช้งาน': log.zone || '-',
+      'วันที่เข้า': formatThaiDate(entryDate),
+      'เวลาเข้า': formatThaiTime(entryDate),
+      'เวลาออก': exitDate ? formatThaiTime(exitDate) : 'ยังไม่ออก',
+      'ระยะเวลาใช้งาน (นาที)': log.durationMinutes || (log.status === 'active' ? 'กำลังใช้งาน' : 0),
+      'สถานะ': log.status === 'active' ? 'กำลังใช้งาน' : (log.status === 'cancelled' ? 'ยกเลิก' : 'เสร็จสิ้น'),
+      'หมายเหตุ': log.note || '-'
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // Set column widths for readability
+  ws['!cols'] = [
+    { wch: 6 },  // ลำดับ
+    { wch: 20 }, // รหัส
+    { wch: 22 }, // ชื่อ
+    { wch: 18 }, // สังกัด
+    { wch: 14 }, // รหัสพนง.
+    { wch: 22 }, // ชมรม
+    { wch: 24 }, // พื้นที่
+    { wch: 16 }, // วันที่
+    { wch: 12 }, // เวลาเข้า
+    { wch: 12 }, // เวลาออก
+    { wch: 20 }, // ระยะเวลา
+    { wch: 14 }, // สถานะ
+    { wch: 24 }  // หมายเหตุ
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ประวัติการใช้งานอาคาร');
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+  const filename = `รายงานการเข้าใช้งานอาคาร_ต0025_${dateStr}.xlsx`;
+
+  XLSX.writeFile(wb, filename);
+  toast(`Export ไฟล์ ${filename} สำเร็จ ✓`);
+}
+
+/* ─── EXPORT TO CSV WITH UTF-8 BOM ─── */
+function exportToCSV() {
+  if (filteredLogs.length === 0) {
+    toast('ไม่มีข้อมูลที่จะ Export', true);
+    return;
+  }
+
+  const headers = [
+    'ลำดับ', 'รหัสบันทึก', 'ชื่อ-นามสกุล', 'สังกัด', 'รหัสพนักงาน',
+    'ชมรม/กิจกรรม', 'พื้นที่', 'วันที่เข้า', 'เวลาเข้า', 'เวลาออก',
+    'ระยะเวลา(นาที)', 'สถานะ', 'หมายเหตุ'
+  ];
+
+  const rows = filteredLogs.map((log, index) => {
+    const entryDate = new Date(log.checkInTime);
+    const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+    return [
+      index + 1,
+      `"${log.id}"`,
+      `"${log.userName}"`,
+      `"${log.department}"`,
+      `"${log.empId || ''}"`,
+      `"${log.clubName}"`,
+      `"${log.zone || ''}"`,
+      `"${formatThaiDate(entryDate)}"`,
+      `"${formatThaiTime(entryDate)}"`,
+      `"${exitDate ? formatThaiTime(exitDate) : 'ยังไม่ออก'}"`,
+      log.durationMinutes || 0,
+      `"${log.status}"`,
+      `"${(log.note || '').replace(/"/g, '""')}"`
+    ].join(',');
+  });
+
+  // UTF-8 BOM \uFEFF ensures Thai characters render properly in Excel
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  a.download = `ประวัติใช้งานอาคาร_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Export CSV สำเร็จ ✓');
+}
+
+/* ─── BACKUP & IMPORT DATABASE JSON ─── */
+function exportDatabaseJSON() {
+  const data = {
+    version: 2,
+    appName: 'BuildingAccessSystem_EGAT',
+    exportedAt: new Date().toISOString(),
+    records: allLogsCache
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_building_db_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('สำรองฐานข้อมูลเป็น JSON เรียบร้อย');
+}
+
+function importDatabaseJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const records = data.records || (Array.isArray(data) ? data : []);
+      if (records.length === 0) {
+        toast('ไม่พบรายการข้อมูลในไฟล์ JSON', true);
+        return;
+      }
+      for (const rec of records) {
+        await appDB.updateLog(rec);
+      }
+      toast(`นำเข้า ${records.length} รายการสำเร็จ!`);
+      refreshDataViews();
+      loadHistoryTable();
+    } catch(err) {
+      toast('รูปแบบไฟล์ไม่ถูกต้อง', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ─── ANALYTICS & STATS ─── */
+async function loadAnalytics() {
+  const logs = await appDB.getAllLogs();
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+
+  // KPI 1: Total
+  document.getElementById('kpi-total-visits').textContent = logs.length;
+
+  // KPI 2: Today
+  const todayLogs = logs.filter(l => {
+    const d = new Date(l.checkInTime);
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` === todayStr;
+  });
+  document.getElementById('kpi-today-visits').textContent = todayLogs.length;
+
+  // KPI 3: Active Now
+  const activeNow = logs.filter(l => l.status === 'active').length;
+  document.getElementById('kpi-active-now').textContent = activeNow;
+
+  // Club Breakdown
+  const clubCounts = {};
+  CLUBS.forEach(c => clubCounts[c.id] = 0);
+  logs.forEach(l => {
+    if (clubCounts[l.clubId] !== undefined) clubCounts[l.clubId]++;
+  });
+
+  // Top Club
+  let topClubId = 'basketball';
+  let maxClubCount = -1;
+  for (const cid in clubCounts) {
+    if (clubCounts[cid] > maxClubCount) {
+      maxClubCount = clubCounts[cid];
+      topClubId = cid;
+    }
+  }
+  const topClubObj = CLUBS.find(c => c.id === topClubId) || CLUBS[0];
+  document.getElementById('kpi-top-club').textContent = `${topClubObj.icon} ${topClubObj.name}`;
+  document.getElementById('kpi-top-club-sub').textContent = `${maxClubCount} ครั้ง (${logs.length > 0 ? Math.round((maxClubCount/logs.length)*100) : 0}%)`;
+
+  // Render Club Bars
+  const clubBarsEl = document.getElementById('analytics-club-bars');
+  clubBarsEl.innerHTML = CLUBS.map(club => {
+    const count = clubCounts[club.id] || 0;
+    const pct = logs.length > 0 ? Math.round((count / logs.length) * 100) : 0;
+    return `
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
+          <span>${club.icon} ${club.name}</span>
+          <span style="font-weight: 600;">${count} ครั้ง (${pct}%)</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
+          <div style="background: ${club.color}; width: ${pct}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Department Breakdown
+  const deptCounts = {};
+  logs.forEach(l => {
+    const dept = l.department || 'อื่นๆ';
+    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+  });
+  const deptSorted = Object.entries(deptCounts).sort((a,b) => b[1] - a[1]);
+
+  const deptBarsEl = document.getElementById('analytics-dept-bars');
+  deptBarsEl.innerHTML = deptSorted.slice(0, 6).map(([dept, count]) => {
+    const pct = logs.length > 0 ? Math.round((count / logs.length) * 100) : 0;
+    return `
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
+          <span>🏢 ${dept}</span>
+          <span style="font-weight: 600;">${count} ครั้ง (${pct}%)</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
+          <div style="background: #3b82f6; width: ${pct}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+        </div>
+      </div>
+    `;
+  }).join('') || '<div style="color:var(--text-dim);text-align:center;">ยังไม่มีข้อมูลสถิติ</div>';
+}
+
+/* ─── SETTINGS & SAMPLE DATA GENERATOR ─── */
+function loadSettingsInputs() {
+  const profile = getUserProfile() || {};
+  document.getElementById('setting-name').value = profile.name || '';
+  if (profile.dept) document.getElementById('setting-dept').value = profile.dept;
+  document.getElementById('setting-empid').value = profile.empId || '';
+  document.getElementById('setting-default-club').value = localStorage.getItem('snb_active_club') || 'basketball';
+  document.getElementById('setting-cloud-url').value = localStorage.getItem('snb_cloud_url') || '';
+}
+
+function saveUserSettings() {
+  const name = document.getElementById('setting-name').value.trim();
+  const dept = document.getElementById('setting-dept').value;
+  const empId = document.getElementById('setting-empid').value.trim();
+  const defaultClub = document.getElementById('setting-default-club').value;
+  const cloudUrl = document.getElementById('setting-cloud-url').value.trim();
+
+  if (!name) {
+    toast('กรุณาระบุชื่อ-นามสกุล', true);
+    return;
+  }
+
+  setUserProfile({ name, dept, empId });
+  selectClub(defaultClub);
+  localStorage.setItem('snb_cloud_url', cloudUrl);
+  refreshProfileDisplay();
+  toast('บันทึกการตั้งค่าเรียบร้อย ✓');
+}
+
+async function loadSampleDemoData() {
+  if (!confirm('ต้องการเพิ่มข้อมูลตัวอย่างสำหรับการทดสอบระบบหรือไม่?')) return;
+
+  const names = ['สมชาย สายใจดี', 'วิภาดา รัตนกุล', 'ณัฐพล ทวีศิลป์', 'อนันต์ บุญยืน', 'ศิริพร สุขเกษม', 'ธนากร มั่งมี'];
+  const clubsPool = ['basketball', 'golf', 'archery', 'badminton', 'heights_training'];
+  const deptsPool = ['ส่วนกลาง ชธธ.', 'อบค.', 'อบฟ.', 'อบย.', 'อคม.', 'อรอ.'];
+
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const clubId = clubsPool[i % clubsPool.length];
+    const club = CLUBS.find(c => c.id === clubId);
+    const dayOffset = Math.floor(i / 3);
+    const entryDate = new Date(now.getTime() - dayOffset * 86400000 - (i % 5) * 3600000);
+    const durationMins = 45 + (i * 15) % 90;
+    const exitDate = new Date(entryDate.getTime() + durationMins * 60000);
+
+    const rec = {
+      id: generateRecordId(),
+      userName: names[i % names.length],
+      department: deptsPool[i % deptsPool.length],
+      empId: `650${100 + i}`,
+      clubId: club.id,
+      clubName: club.name,
+      zone: club.zone,
+      checkInTime: entryDate.toISOString(),
+      checkOutTime: i === 0 ? null : exitDate.toISOString(),
+      durationMinutes: i === 0 ? 0 : durationMins,
+      status: i === 0 ? 'active' : 'completed',
+      note: i % 2 === 0 ? 'ซ้อมกีฬาประจำสัปดาห์' : 'ออกกำลังกายทั่วไป',
+      createdAt: entryDate.toISOString()
+    };
+    await appDB.addLog(rec);
+  }
+
+  toast('โหลดข้อมูลตัวอย่าง 12 รายการสำเร็จ!');
+  refreshDataViews();
+  loadHistoryTable();
+}
+
+async function clearAllData() {
+  if (confirm('คำเตือน: คุณต้องการล้างข้อมูลประวัติการใช้งานทั้งหมดในเครื่องนี้หรือไม่?')) {
+    await appDB.clearAll();
+    clearSession();
+    toast('ล้างฐานข้อมูลเรียบร้อย');
+    refreshDataViews();
+    loadHistoryTable();
+  }
+}
+
+/* ─── INITIALIZATION ON PAGE LOAD ─── */
+window.addEventListener('DOMContentLoaded', async () => {
+  await appDB.init();
+  initProfileDropdowns();
+  startLiveClock();
+  selectClub(currentClubId);
+  refreshProfileDisplay();
+  await refreshDataViews();
+
+  // If new user with no profile, auto prompt setup modal
+  const profile = getUserProfile();
+  if (!profile || !profile.name) {
+    setTimeout(openProfileModal, 600);
+  }
+});
 </script>
+
 </body>
 </html>
