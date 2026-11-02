@@ -55,10 +55,10 @@
     min-height: 100dvh;
     overflow-x: hidden;
     position: relative;
-    padding-bottom: 90px; /* Space for mobile nav */
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); /* Space for mobile bottom nav with safe area */
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 900px) {
     body { padding-bottom: 30px; }
   }
 
@@ -155,7 +155,8 @@
   nav.desktop-nav {
     display: none;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: nowrap;
   }
 
   @media (min-width: 900px) {
@@ -163,32 +164,98 @@
   }
 
   .nav-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 16px;
+    gap: 6px;
+    padding: 8px 14px;
     border-radius: 12px;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-muted);
-    background: transparent;
-    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: inherit;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
   }
 
   .nav-btn:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
   }
 
   .nav-btn.active {
     color: #fff;
-    background: rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(37, 99, 235, 0.35));
+    border-color: rgba(96, 165, 250, 0.6);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+  }
+
+  /* Responsive Header & Desktop Nav for medium screens (900px - 1180px) */
+  @media (min-width: 900px) and (max-width: 1180px) {
+    header.app-header {
+      padding: 10px 14px;
+      gap: 8px;
+    }
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+    }
+    .brand-text h1 {
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 250px;
+    }
+    .brand-text p {
+      font-size: 0.72rem;
+    }
+    nav.desktop-nav {
+      gap: 4px;
+    }
+    .nav-btn {
+      padding: 7px 10px;
+      font-size: 0.8rem;
+      gap: 5px;
+    }
+    .occupants-pill {
+      padding: 5px 10px;
+      font-size: 0.74rem;
+    }
+  }
+
+  /* Responsive Header for Mobile (< 900px) */
+  @media (max-width: 899px) {
+    header.app-header {
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .brand-area {
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+    }
+    .brand-text h1 {
+      font-size: 0.92rem;
+      line-height: 1.25;
+    }
+    .brand-text p {
+      font-size: 0.7rem;
+    }
+    .occupants-pill {
+      padding: 5px 10px;
+      font-size: 0.72rem;
+    }
   }
 
   .header-actions {
@@ -251,11 +318,14 @@
 
   .club-tabs {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     overflow-x: auto;
     padding-bottom: 8px;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
   }
   .club-tabs::-webkit-scrollbar { display: none; }
 
@@ -263,14 +333,16 @@
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     background: rgba(15, 23, 42, 0.7);
     border: 1px solid var(--border-color);
-    padding: 10px 18px;
-    border-radius: 14px;
+    padding: 8px 15px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
+    scroll-snap-align: start;
+    white-space: nowrap;
   }
 
   .club-tab-item:hover {
@@ -287,26 +359,47 @@
   }
 
   .club-tab-icon {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     line-height: 1;
+    flex-shrink: 0;
   }
 
   .club-tab-text {
     display: flex;
     flex-direction: column;
     text-align: left;
-  }
-
-  .club-tab-name {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #fff;
     white-space: nowrap;
   }
 
+  .club-tab-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+
   .club-tab-count {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .club-tab-item {
+      padding: 6px 12px;
+      gap: 7px;
+      border-radius: 10px;
+    }
+    .club-tab-icon {
+      font-size: 1.15rem;
+    }
+    .club-tab-name {
+      font-size: 0.8rem;
+    }
+    .club-tab-count {
+      font-size: 0.65rem;
+    }
   }
 
   /* Main Responsive Grid Layout */
@@ -924,6 +1017,8 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
+    white-space: nowrap;
+    user-select: none;
   }
   .btn-filter-period:hover {
     background: rgba(255, 255, 255, 0.12);
@@ -945,6 +1040,8 @@
     font-size: 0.72rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    user-select: none;
   }
   .btn-day-preset:hover {
     background: rgba(59, 130, 246, 0.25);
@@ -961,6 +1058,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
+    user-select: none;
   }
   .btn-time-preset:hover {
     background: #2563eb;
@@ -977,16 +1075,18 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 68px;
-    background: rgba(9, 13, 22, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border-color);
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(10, 15, 29, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     z-index: 100;
     justify-content: space-around;
     align-items: center;
-    padding: 0 10px;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+    padding-left: 4px;
+    padding-right: 4px;
+    box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.55);
   }
 
   @media (min-width: 900px) {
@@ -998,26 +1098,71 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     background: transparent;
     border: none;
     color: var(--text-dim);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-family: inherit;
     cursor: pointer;
     flex: 1;
-    padding: 6px 0;
-    transition: color 0.2s;
+    min-width: 0;
+    padding: 4px 2px;
+    transition: color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bottom-nav-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bottom-nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    transition: all 0.2s ease;
+  }
+
+  .bottom-nav-item span {
+    display: block;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.67rem;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: color 0.2s ease, font-weight 0.2s ease;
+  }
+
+  .bottom-nav-item:hover {
+    color: var(--text-muted);
   }
 
   .bottom-nav-item.active {
     color: #60a5fa;
   }
 
-  .bottom-nav-item svg {
-    width: 22px;
-    height: 22px;
-    stroke-width: 2;
+  .bottom-nav-item.active .bottom-nav-icon-wrap {
+    background: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+  }
+
+  .bottom-nav-item.active svg {
+    stroke: #60a5fa;
+    transform: scale(1.05);
+  }
+
+  .bottom-nav-item.active span {
+    color: #93c5fd;
+    font-weight: 600;
   }
 
   /* Modal */
@@ -1156,13 +1301,13 @@
     <!-- Desktop Navigation -->
     <nav class="desktop-nav">
       <button class="nav-btn active" data-tab="checkin" onclick="switchMainTab('checkin')">
-        <span>📍</span> ลงทะเบียน เข้า-ออก
+        <span>📍</span> ลงทะเบียน
       </button>
       <button class="nav-btn" data-tab="clubs" onclick="switchMainTab('clubs')">
-        <span>🏆</span> สถานะแต่ละชมรม
+        <span>🏆</span> สถานะชมรม
       </button>
       <button class="nav-btn" data-tab="history" onclick="switchMainTab('history')">
-        <span>📋</span> ประวัติและการบันทึก
+        <span>📋</span> ประวัติการใช้งาน
       </button>
       <button class="nav-btn" data-tab="analytics" onclick="switchMainTab('analytics')">
         <span>📊</span> สถิติภาพรวม
@@ -1753,23 +1898,33 @@
 <!-- Mobile Bottom Navigation Bar -->
 <nav class="mobile-bottom-nav">
   <button class="bottom-nav-item active" data-tab="checkin" onclick="switchMainTab('checkin')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <div class="bottom-nav-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
     <span>ลงทะเบียน</span>
   </button>
   <button class="bottom-nav-item" data-tab="clubs" onclick="switchMainTab('clubs')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    <div class="bottom-nav-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    </div>
     <span>สถานะชมรม</span>
   </button>
   <button class="bottom-nav-item" data-tab="history" onclick="switchMainTab('history')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <div class="bottom-nav-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    </div>
     <span>ประวัติ</span>
   </button>
   <button class="bottom-nav-item" data-tab="analytics" onclick="switchMainTab('analytics')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <div class="bottom-nav-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </div>
     <span>สถิติ</span>
   </button>
   <button class="bottom-nav-item" data-tab="settings" onclick="switchMainTab('settings')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <div class="bottom-nav-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </div>
     <span>ตั้งค่า</span>
   </button>
 </nav>
@@ -2737,6 +2892,11 @@ function selectClub(clubId) {
   renderClubTabs();
   renderCheckInArea();
   updateCanvasTheme(club);
+
+  const activeTabEl = document.querySelector(`.club-tab-item[data-club="${clubId}"]`);
+  if (activeTabEl) {
+    activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
 }
 
 /* ─── CANVAS BACKGROUND ENGINE ─── */
