@@ -25,10 +25,12 @@
   - ตาราง: `access_logs`
   - จัดเก็บข้อมูลถาวรใน Browser (ความจุสูง ไม่หายเมื่อปิดเครื่อง ใช้งานแบบ Offline ได้สมบูรณ์)
   - เก็บข้อมูลครบถ้วน: `id`, `userName`, `department`, `empId`, `clubId`, `clubName`, `zone`, `checkInTime`, `checkOutTime`, `durationMinutes`, `status`, `note`, `createdAt`
-- **รองรับ Cloud Database & Webhook Sync:**
-  - มีไฟล์ `database_schema.sql` สำหรับนำไปสร้างฐานข้อมูล PostgreSQL / Supabase / MySQL
-  - มีไฟล์ `google_sheets_apps_script.js` สำหรับเชื่อมต่อไปยัง Google Sheets กลาง
-  - สามารถใส่ URL ในหน้าตั้งค่าเพื่อให้ระบบยิงข้อมูลสำเนาไปยังระบบส่วนกลางอัตโนมัติ
+- **ระบบ Cloud Database เชื่อมโยงทุกเครื่องแบบ Real-time (2-Way Cloud Sync):**
+  - ใช้ **Google Sheets (ผ่าน Apps Script Web App)** เป็นฐานข้อมูลออนไลน์กลางฟรี
+  - เมื่อผู้ใช้สแกน QR Code ลงทะเบียนผ่านมือถือเครื่องใดก็ตาม ข้อมูลจะถูกบันทึกส่งไปยัง Google Sheets กลางทันที
+  - เมื่อเปิดเว็บจากคอมพิวเตอร์หรืออุปกรณ์อื่น ระบบจะดึงข้อมูลทั้งหมดจาก Google Sheets มาแสดงผลในตารางประวัติทันที ทำให้ทุกเครื่องเห็นประวัติและสถิติชุดเดียวกัน
+  - มีไฟล์ `google_sheets_apps_script.js` สำหรับติดตั้งบน Google Sheets ได้ทันทีใน 2 นาที
+  - มีไฟล์ `database_schema.sql` เผื่อต้องการติดตั้งบน PostgreSQL / Supabase / MySQL ขององค์กร
 
 ### 3. ประวัติการใช้งานและระบบ Export ข้อมูล (History & Export)
 - **ค้นหาและกรองข้อมูลอย่างละเอียด (Live Filter):**

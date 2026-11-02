@@ -1249,6 +1249,9 @@
 
         <!-- Export Buttons Group -->
         <div class="export-btn-group">
+          <button class="btn-secondary" onclick="syncFromCloud(false)" title="ดึงข้อมูลประวัติล่าสุดจาก Google Sheets">
+            <span>🔄</span> ซิงก์คลาวด์
+          </button>
           <button class="btn-export-excel" onclick="exportToExcel()" title="ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)">
             <span>📊</span> Export Excel (.xlsx)
           </button>
@@ -1262,6 +1265,17 @@
             <span>💾</span> Backup JSON
           </button>
         </div>
+      </div>
+
+      <!-- Cloud Sync Notice Banner -->
+      <div id="cloud-sync-banner" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="font-size: 0.82rem; line-height: 1.5;" id="cloud-banner-text">
+          <strong style="color: #fbbf24;">💡 ทำไมเปิดดูจากเครื่องอื่นแล้วไม่เห็นประวัติ?</strong><br>
+          <span style="color: var(--text-muted);">เนื่องจากขณะนี้ระบบบันทึกอยู่ใน Browser ของเครื่องนี้ หากต้องการให้ทุกเครื่องและมือถือมองเห็นประวัติร่วมกัน กรุณาเชื่อมต่อ Google Sheets กลาง</span>
+        </div>
+        <button class="btn-secondary" style="color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-size: 0.8rem; padding: 6px 12px; white-space: nowrap;" onclick="switchMainTab('settings')">
+          ⚙️ เชื่อมต่อ Google Sheets กลาง
+        </button>
       </div>
 
       <!-- Filters & Search Toolbar -->
@@ -1422,14 +1436,35 @@
 
       <!-- Cloud Sync & Database Control -->
       <div class="glass-card">
-        <h2 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; color: #fff;">💾 จัดการฐานข้อมูลและ Cloud Sync</h2>
+        <h2 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 6px; color: #fff;">☁️ เชื่อมต่อ Google Sheets กลาง (ดูประวัติร่วมกันทุกเครื่อง)</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+          เมื่อเชื่อมต่อแล้ว ข้อมูลลงทะเบียนจากมือถือทุกเครื่องและคอมพิวเตอร์จะถูกบันทึกลง Google Sheet เดียวกัน และแสดงประวัติข้ามเครื่องได้ทันที
+        </p>
         
         <div class="form-group">
-          <label class="form-label">Cloud Webhook / Google Apps Script URL (ทางเลือกสำหรับซิงก์กลาง)</label>
-          <input type="url" id="setting-cloud-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
-          <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">
-            หากตั้งค่า URL ระบบจะส่งสำเนาข้อมูลไปยัง Google Sheet หรือ Backend API กลางของฝ่ายบริหารอัตโนมัติ
-          </p>
+          <label class="form-label">Google Apps Script Web App URL (ลงท้ายด้วย /exec)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="url" id="setting-cloud-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
+            <button class="btn-secondary" style="white-space: nowrap; padding: 0 16px; color: #60a5fa;" onclick="saveCloudUrlAndSync()">
+              💾 บันทึก & ซิงก์
+            </button>
+          </div>
+          <div id="settings-cloud-status" style="font-size: 0.75rem; margin-top: 6px; color: var(--text-dim);"></div>
+        </div>
+
+        <!-- Quick 4-Step Guide Box -->
+        <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-md); padding: 14px; margin-top: 14px; font-size: 0.8rem; line-height: 1.6;">
+          <div style="font-weight: 600; color: #60a5fa; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>📖</span> วิธีเชื่อมต่อ Google Sheets ใน 2 นาที (ฟรี ไม่มีค่าใช้จ่าย):
+          </div>
+          <ol style="margin-left: 20px; color: var(--text-muted);">
+            <li>เปิด <strong>Google Sheets</strong> เปล่าขึ้นมา 1 ไฟล์</li>
+            <li>ไปที่เมนูด้านบน <strong>ส่วนขยาย (Extensions)</strong> > <strong>Apps Script</strong></li>
+            <li>ลบโค้ดเดิมออกทั้งหมด แล้วนำโค้ดในไฟล์ <code>google_sheets_apps_script.js</code> (อยู่ในโฟลเดอร์โครงการนี้) มาวางแล้วกด <strong>บันทึก (Save)</strong></li>
+            <li>คลิกปุ่มสีน้ำเงิน <strong>"ทำให้ใช้งานได้ (Deploy)"</strong> > <strong>"การทำให้ใช้งานได้ใหม่ (New deployment)"</strong></li>
+            <li>เลือกประเภท <strong>"เว็บแอป (Web app)"</strong> > ในช่อง <em>"ผู้มีสิทธิ์เข้าถึง (Who has access)"</em> เลือกเป็น <strong>"ทุกคน (Anyone)"</strong></li>
+            <li>กด Deploy แล้วคัดลอก <strong>URL เว็บแอป (ที่ลงท้ายด้วย /exec)</strong> มาวางในช่องด้านบนนี้ แล้วกด <strong>"บันทึก & ซิงก์"</strong></li>
+          </ol>
         </div>
 
         <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
@@ -1515,6 +1550,14 @@
 <!-- APPLICATION LOGIC & DATABASE ENGINE                               -->
 <!-- ================================================================= -->
 <script>
+/* ─── CLOUD DATABASE CONFIGURATION ─── */
+// ใส่ URL ของ Google Apps Script Web App ที่นี่ เพื่อให้ทุกเครื่องที่เปิดเว็บนี้ (แม้ไม่ได้ตั้งค่าเอง) ซิงก์ฐานข้อมูลกลางอัตโนมัติ
+const DEFAULT_CLOUD_API_URL = '';
+
+function getCloudApiUrl() {
+  return localStorage.getItem('snb_cloud_url') || DEFAULT_CLOUD_API_URL;
+}
+
 /* ─── CONSTANTS & CLUBS MASTER DATA ─── */
 const CLUBS = [
   {
@@ -1573,7 +1616,6 @@ const DEPTS = [
   'อรอ.',
   'อหข.',
   'อปล.',
-  'ฝ่ายบริหารและบริการทั่วไป',
   'บุคคลภายนอก / ผู้ติดตาม',
   'อื่นๆ'
 ];
@@ -1688,6 +1730,29 @@ class AppDatabase {
     }
   }
 
+  async bulkUpsert(records) {
+    if (!records || records.length === 0) return true;
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction('access_logs', 'readwrite');
+        const store = tx.objectStore('access_logs');
+        for (const rec of records) {
+          store.put(rec);
+        }
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } else {
+      const current = this.getLocalStorageLogs();
+      const map = new Map(current.map(r => [r.id, r]));
+      for (const rec of records) {
+        map.set(rec.id, rec);
+      }
+      localStorage.setItem('db_fallback_logs', JSON.stringify(Array.from(map.values())));
+      return true;
+    }
+  }
+
   async clearAll() {
     if (this.db) {
       return new Promise((resolve) => {
@@ -1796,8 +1861,10 @@ function switchMainTab(tabId) {
 
   // Trigger data refreshes on tab open
   if (tabId === 'history') {
+    syncFromCloud(true);
     loadHistoryTable();
   } else if (tabId === 'analytics') {
+    syncFromCloud(true);
     loadAnalytics();
   } else if (tabId === 'settings') {
     loadSettingsInputs();
@@ -2261,18 +2328,73 @@ async function submitToLegacyGoogleForm(session, entryTime, exitTime) {
 
 /* ─── CLOUD WEBHOOK / GOOGLE APPS SCRIPT SYNC ─── */
 async function syncRecordToCloud(record, action) {
-  const url = localStorage.getItem('snb_cloud_url');
+  const url = getCloudApiUrl();
   if (!url) return;
   try {
     await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ ...record, action })
     });
   } catch(e) {
-    console.warn('Cloud sync offline or blocked', e);
+    console.warn('Cloud sync error', e);
   }
+}
+
+async function syncFromCloud(silent = false) {
+  const url = getCloudApiUrl();
+  const banner = document.getElementById('cloud-sync-banner');
+  const bannerText = document.getElementById('cloud-banner-text');
+
+  if (!url) {
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.style.background = 'rgba(245, 158, 11, 0.12)';
+      banner.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+    }
+    if (bannerText) {
+      bannerText.innerHTML = `
+        <strong style="color: #fbbf24;">💡 ทำไมเปิดดูจากเครื่องอื่นแล้วไม่เห็นประวัติ?</strong><br>
+        <span style="color: var(--text-muted);">เนื่องจากขณะนี้ระบบบันทึกอยู่ใน Browser ของเครื่องนี้ หากต้องการให้ทุกเครื่องและมือถือมองเห็นประวัติร่วมกัน กรุณาเชื่อมต่อ Google Sheets กลาง</span>
+      `;
+    }
+    return false;
+  }
+
+  if (!silent) toast('กำลังดึงข้อมูลล่าสุดจาก Google Sheets...');
+
+  try {
+    const fetchUrl = url + (url.includes('?') ? '&' : '?') + 'action=getLogs&t=' + Date.now();
+    const res = await fetch(fetchUrl);
+    const data = await res.json();
+    if (data && Array.isArray(data.records)) {
+      await appDB.bulkUpsert(data.records);
+      allLogsCache = await appDB.getAllLogs();
+      activeLogsCache = allLogsCache.filter(l => l.status === 'active');
+      
+      if (!silent) toast(`ซิงก์ข้อมูลจาก Google Sheets สำเร็จ (${data.records.length} รายการ) ✓`);
+
+      if (banner) {
+        banner.style.display = 'flex';
+        banner.style.background = 'rgba(16, 185, 129, 0.12)';
+        banner.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+      }
+      if (bannerText) {
+        bannerText.innerHTML = `
+          <strong style="color: #34d399;">☁️ เชื่อมต่อฐานข้อมูลกลาง (Google Sheets) สำเร็จ</strong><br>
+          <span style="color: var(--text-muted);">ซิงก์ข้อมูลแล้ว ${data.records.length} รายการ • ข้อมูลจากทุกเครื่องจะถูกรวบรวมไว้ที่นี่</span>
+        `;
+      }
+      refreshDataViews();
+      if (typeof applyHistoryFilters === 'function') applyHistoryFilters();
+      return true;
+    }
+  } catch(e) {
+    console.warn('Sync from cloud failed', e);
+    if (!silent) toast('เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาตรวจสอบ URL หรือสิทธิ์การเข้าถึง', true);
+  }
+  return false;
 }
 
 /* ─── DATA REFRESH & DASHBOARD VIEWS ─── */
@@ -2773,7 +2895,35 @@ function loadSettingsInputs() {
   if (profile.dept) document.getElementById('setting-dept').value = profile.dept;
   document.getElementById('setting-empid').value = profile.empId || '';
   document.getElementById('setting-default-club').value = localStorage.getItem('snb_active_club') || 'basketball';
-  document.getElementById('setting-cloud-url').value = localStorage.getItem('snb_cloud_url') || '';
+  const currentUrl = getCloudApiUrl();
+  document.getElementById('setting-cloud-url').value = currentUrl;
+  updateSettingsCloudStatus(currentUrl);
+}
+
+function updateSettingsCloudStatus(url) {
+  const statusEl = document.getElementById('settings-cloud-status');
+  if (!statusEl) return;
+  if (url) {
+    statusEl.innerHTML = `<span style="color:#34d399;">🟢 ตั้งค่า URL ฐานข้อมูลกลางแล้ว</span>`;
+  } else {
+    statusEl.innerHTML = `<span style="color:#fbbf24;">⚠️ ยังไม่ได้เชื่อมต่อ Google Sheets กลาง (ประวัติจะอยู่เฉพาะในเครื่องนี้)</span>`;
+  }
+}
+
+async function saveCloudUrlAndSync() {
+  const cloudUrl = document.getElementById('setting-cloud-url').value.trim();
+  localStorage.setItem('snb_cloud_url', cloudUrl);
+  updateSettingsCloudStatus(cloudUrl);
+  if (!cloudUrl) {
+    toast('ลบการเชื่อมต่อ Cloud แล้ว (ทำงานแบบออฟไลน์)');
+    syncFromCloud(true);
+    return;
+  }
+  toast('กำลังทดสอบเชื่อมต่อ Google Sheets...');
+  const ok = await syncFromCloud(false);
+  if (ok) {
+    toast('เชื่อมต่อและซิงก์ข้อมูลจาก Google Sheets สำเร็จ! ✓');
+  }
 }
 
 function saveUserSettings() {
@@ -2791,8 +2941,10 @@ function saveUserSettings() {
   setUserProfile({ name, dept, empId });
   selectClub(defaultClub);
   localStorage.setItem('snb_cloud_url', cloudUrl);
+  updateSettingsCloudStatus(cloudUrl);
   refreshProfileDisplay();
   toast('บันทึกการตั้งค่าเรียบร้อย ✓');
+  if (cloudUrl) syncFromCloud(true);
 }
 
 async function loadSampleDemoData() {
@@ -2852,6 +3004,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   selectClub(currentClubId);
   refreshProfileDisplay();
   await refreshDataViews();
+
+  // Auto sync latest records from Google Sheets
+  syncFromCloud(true);
 
   // If new user with no profile, auto prompt setup modal
   const profile = getUserProfile();
