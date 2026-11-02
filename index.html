@@ -1295,6 +1295,10 @@
           <div style="font-size: 0.75rem; color: #93c5fd; margin-bottom: 4px;">🏟️ ชมรมที่มีผู้กำลังใช้งาน</div>
           <div style="font-size: 1.8rem; font-weight: 700; color: #60a5fa;" id="clubs-active-count">0 / 5 ชมรม</div>
         </div>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-md); padding: 12px 16px; text-align: center;">
+          <div style="font-size: 0.75rem; color: #fde68a; margin-bottom: 4px;">⏰ ชมรมที่พร้อมใช้งานขณะนี้</div>
+          <div style="font-size: 1.8rem; font-weight: 700; color: #fbbf24;" id="clubs-open-count">0 / 5 ชมรม</div>
+        </div>
         <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 12px 16px; text-align: center;">
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">🕒 ซิงก์ฐานข้อมูลล่าสุดเมื่อ</div>
           <div style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-top: 6px;" id="clubs-last-sync-time">-</div>
@@ -1923,10 +1927,128 @@ function getClubSchedules() {
   return { ...DEFAULT_CLUB_SCHEDULES };
 }
 
+function parseDayNumbers(daysStr) {
+  if (!daysStr) return [0, 1, 2, 3, 4, 5, 6];
+  const s = daysStr.toLowerCase();
+  if (s.includes('ทุกวัน') && !s.includes('-') && !s.includes('ถึง')) return [0, 1, 2, 3, 4, 5, 6];
+
+  const dayPatterns = [
+    { name: 'อาทิตย์', num: 0 },
+    { name: 'จันทร์', num: 1 },
+    { name: 'อังคาร', num: 2 },
+    { name: 'พฤหัสบดี', num: 4 },
+    { name: 'พฤหัส', num: 4 },
+    { name: 'พุธ', num: 3 },
+    { name: 'ศุกร์', num: 5 },
+    { name: 'เสาร์', num: 6 }
+  ];
+
+  const rangeMatch = daysStr.match(/(จันทร์|อังคาร|พุธ|พฤหัสบดี|พฤหัส|ศุกร์|เสาร์|อาทิตย์)\s*(?:-|–|—|ถึง)\s*(จันทร์|อังคาร|พุธ|พฤหัสบดี|พฤหัส|ศุกร์|เสาร์|อาทิตย์)/);
+  if (rangeMatch) {
+    const findNum = (str) => dayPatterns.find(p => str.includes(p.name))?.num;
+    const startDay = findNum(rangeMatch[1]);
+    const endDay = findNum(rangeMatch[2]);
+    if (startDay !== undefined && endDay !== undefined) {
+      const result = [];
+      let cur = startDay;
+      while (true) {
+        result.push(cur);
+        if (cur === endDay) break;
+        cur = (cur + 1) % 7;
+      }
+      return result;
+    }
+  }
+
+  const matched = [];
+  dayPatterns.forEach(p => {
+    if (daysStr.includes(p.name)) {
+      if (!matched.includes(p.num)) matched.push(p.num);
+    }
+  });
+
+  return matched.length > 0 ? matched : [0, 1, 2, 3, 4, 5, 6];
+}
+
+function parseTimeRange(timeStr) {
+  if (!timeStr) return null;
+  const m = timeStr.match(/(\d{1,2})[:.](\d{2})\s*(?:-|–|—|ถึง)\s*(\d{1,2})[:.](\d{2})/);
+  if (m) {
+    const startMin = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    const endMin = parseInt(m[3], 10) * 60 + parseInt(m[4], 10);
+    return { startMin, endMin };
+  }
+  return null;
+}
+
+function getClubOperatingStatus(clubId, now = new Date()) {
+  const schedules = getClubSchedules();
+  const sched = schedules[clubId] || { days: 'ทุกวัน', time: 'ตลอดเวลา', note: '' };
+
+  const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+
+  const openDays = parseDayNumbers(sched.days);
+  const isOpenToday = openDays.includes(currentDay);
+
+  const timeRange = parseTimeRange(sched.time);
+  let isWithinHours = true;
+  if (timeRange) {
+    if (timeRange.startMin <= timeRange.endMin) {
+      isWithinHours = (currentMin >= timeRange.startMin && currentMin <= timeRange.endMin);
+    } else {
+      isWithinHours = (currentMin >= timeRange.startMin || currentMin <= timeRange.endMin);
+    }
+  }
+
+  const isOpenNow = isOpenToday && isWithinHours;
+
+  let statusCode = 'open'; // 'open', 'closed_today', 'outside_hours'
+  let statusText = 'พร้อมใช้งาน';
+  let reason = 'เปิดให้บริการตามเวลา';
+  let statusColor = '#34d399';
+  let statusBg = 'rgba(16, 185, 129, 0.15)';
+  let statusBorder = 'rgba(16, 185, 129, 0.35)';
+
+  if (!isOpenToday) {
+    statusCode = 'closed_today';
+    statusText = 'ปิดทำการวันนี้';
+    reason = `เปิดเฉพาะ: ${sched.days}`;
+    statusColor = '#f87171';
+    statusBg = 'rgba(239, 68, 68, 0.15)';
+    statusBorder = 'rgba(239, 68, 68, 0.35)';
+  } else if (!isWithinHours) {
+    statusCode = 'outside_hours';
+    statusText = 'นอกเวลาทำการ';
+    if (timeRange && currentMin < timeRange.startMin) {
+      reason = `เปิดเวลา ${sched.time.split('-')[0].trim()}`;
+    } else {
+      reason = `หมดเวลาให้บริการวันนี้ (${sched.time})`;
+    }
+    statusColor = '#fbbf24';
+    statusBg = 'rgba(245, 158, 11, 0.15)';
+    statusBorder = 'rgba(245, 158, 11, 0.35)';
+  }
+
+  return {
+    isOpenNow,
+    isOpenToday,
+    isWithinHours,
+    statusCode,
+    statusText,
+    reason,
+    statusColor,
+    statusBg,
+    statusBorder,
+    sched
+  };
+}
+
 function saveClubSchedules(schedules) {
   localStorage.setItem('snb_club_schedules', JSON.stringify(schedules));
   toast('บันทึกกำหนดการใช้สนามเรียบร้อย ✓');
   updateBannerClubSchedule();
+  updateBannerClubOccupants();
   renderClubsQuickGrid();
 }
 
@@ -1934,13 +2056,24 @@ function updateBannerClubSchedule() {
   const club = getSelectedClub();
   const schedules = getClubSchedules();
   const sched = schedules[club.id] || { days: 'ตามประกาศ', time: 'ตามเวลาทำการ', note: '' };
+  const opStatus = getClubOperatingStatus(club.id);
 
   const daysEl = document.getElementById('banner-schedule-days');
   const timeEl = document.getElementById('banner-schedule-time');
   const noteEl = document.getElementById('banner-schedule-note');
 
   if (daysEl) daysEl.textContent = `วันใช้งาน: ${sched.days}`;
-  if (timeEl) timeEl.textContent = `⏰ ${sched.time}`;
+  if (timeEl) {
+    let pillHtml = '';
+    if (opStatus.isOpenNow) {
+      pillHtml = `<span style="margin-left: 6px; font-size: 0.68rem; font-weight: 700; background: rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">🟢 เปิดให้บริการ</span>`;
+    } else if (!opStatus.isOpenToday) {
+      pillHtml = `<span style="margin-left: 6px; font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.4);">🔴 ปิดทำการวันนี้</span>`;
+    } else {
+      pillHtml = `<span style="margin-left: 6px; font-size: 0.68rem; font-weight: 700; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4);">🟡 นอกเวลาทำการ</span>`;
+    }
+    timeEl.innerHTML = `⏰ ${sched.time} ${pillHtml}`;
+  }
   if (noteEl) {
     if (sched.note) {
       noteEl.style.display = 'block';
@@ -2136,6 +2269,7 @@ function updateBannerClubOccupants() {
   if (!bOcc) return;
   const club = getSelectedClub();
   const activeInClub = getActiveLogsForClub(club).length;
+  const opStatus = getClubOperatingStatus(club.id);
 
   if (activeInClub > 0) {
     bOcc.className = 'status-tag status-active';
@@ -2143,12 +2277,24 @@ function updateBannerClubOccupants() {
     bOcc.style.background = 'rgba(16, 185, 129, 0.2)';
     bOcc.style.color = '#34d399';
     bOcc.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+  } else if (opStatus.isOpenNow) {
+    bOcc.className = 'status-tag status-active';
+    bOcc.innerHTML = `🟢 พร้อมใช้งาน (ว่าง 0 คน)`;
+    bOcc.style.background = 'rgba(16, 185, 129, 0.15)';
+    bOcc.style.color = '#34d399';
+    bOcc.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+  } else if (!opStatus.isOpenToday) {
+    bOcc.className = 'status-tag';
+    bOcc.innerHTML = `🔴 ปิดทำการวันนี้ (เปิด: ${opStatus.sched.days})`;
+    bOcc.style.background = 'rgba(239, 68, 68, 0.15)';
+    bOcc.style.color = '#f87171';
+    bOcc.style.borderColor = 'rgba(239, 68, 68, 0.35)';
   } else {
-    bOcc.className = 'status-tag status-completed';
-    bOcc.innerHTML = `⚪ ว่าง (0 คนในสนาม)`;
-    bOcc.style.background = 'rgba(255, 255, 255, 0.05)';
-    bOcc.style.color = 'var(--text-muted)';
-    bOcc.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+    bOcc.className = 'status-tag';
+    bOcc.innerHTML = `🟡 นอกเวลาทำการ (${opStatus.reason})`;
+    bOcc.style.background = 'rgba(245, 158, 11, 0.15)';
+    bOcc.style.color = '#fbbf24';
+    bOcc.style.borderColor = 'rgba(245, 158, 11, 0.35)';
   }
 }
 
@@ -2341,8 +2487,20 @@ function renderClubTabs() {
   if (!container) return;
   container.innerHTML = CLUBS.map(club => {
     const isActive = club.id === currentClubId;
-    // Count active occupants in this club
     const activeInClub = getActiveLogsForClub(club).length;
+    const opStatus = getClubOperatingStatus(club.id);
+
+    let countText = '';
+    if (activeInClub > 0) {
+      countText = `🟢 เล่น ${activeInClub} คน`;
+    } else if (opStatus.isOpenNow) {
+      countText = '🟢 พร้อมใช้';
+    } else if (!opStatus.isOpenToday) {
+      countText = '🔴 ปิดวันนี้';
+    } else {
+      countText = '🟡 นอกเวลา';
+    }
+
     return `
       <div class="club-tab-item ${isActive ? 'active' : ''}" 
            data-club="${club.id}" 
@@ -2351,7 +2509,7 @@ function renderClubTabs() {
         <span class="club-tab-icon">${club.icon}</span>
         <div class="club-tab-text">
           <span class="club-tab-name">${club.name}</span>
-          <span class="club-tab-count">${activeInClub > 0 ? `🟢 กำลังเล่น ${activeInClub} คน` : 'ว่าง'}</span>
+          <span class="club-tab-count">${countText}</span>
         </div>
       </div>
     `;
@@ -2540,6 +2698,14 @@ function startLiveClock() {
         timerEl.textContent = `${pad(hrs)} ชม. ${pad(mins)} นาที ${pad(secs)} วิ`;
       }
     }
+
+    // Auto refresh operating schedule indicators on the minute mark (every 60s)
+    if (now.getSeconds() === 0) {
+      updateBannerClubSchedule();
+      updateBannerClubOccupants();
+      renderClubTabs();
+      renderClubsQuickGrid();
+    }
   }
   tick();
   setInterval(tick, 1000);
@@ -2668,6 +2834,14 @@ async function doCheckIn() {
   }
 
   const club = getSelectedClub();
+  const opStatus = getClubOperatingStatus(club.id);
+  if (!opStatus.isOpenNow) {
+    const confirmMsg = `⚠️ ขณะนี้นอกเวลาเปิดสนามตามกำหนดการของ ${club.name}\nกำหนดการ: ${opStatus.sched.days} (${opStatus.sched.time})\nสถานะ: ${opStatus.statusText} (${opStatus.reason})\n\nคุณต้องการยืนยันการลงทะเบียนเข้าใช้งานหรือไม่?`;
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+  }
+
   const note = (document.getElementById('checkin-note')?.value || '').trim();
   const now = new Date();
   const recordId = generateRecordId();
@@ -2907,13 +3081,40 @@ function renderClubsQuickGrid() {
       const activeInClub = getActiveLogsForClub(club);
       const activeCount = activeInClub.length;
       const sched = schedules[club.id] || { days: 'ตามประกาศ', time: 'ตามเวลาทำการ' };
+      const opStatus = getClubOperatingStatus(club.id);
+
+      let statusBadge = '';
+      if (activeCount > 0) {
+        statusBadge = `
+          <span class="club-active-tag" style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700; border-color: rgba(16, 185, 129, 0.5);">
+            🟢 ${activeCount} คนใช้งาน
+          </span>
+        `;
+      } else if (opStatus.isOpenNow) {
+        statusBadge = `
+          <span class="club-active-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.35);">
+            🟢 พร้อมใช้งาน
+          </span>
+        `;
+      } else if (!opStatus.isOpenToday) {
+        statusBadge = `
+          <span class="club-active-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.35);">
+            🔴 ปิดวันนี้
+          </span>
+        `;
+      } else {
+        statusBadge = `
+          <span class="club-active-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.35);">
+            🟡 นอกเวลา
+          </span>
+        `;
+      }
+
       return `
         <div class="club-card-widget" style="--item-accent: ${club.color};" onclick="selectClub('${club.id}')">
           <div class="club-card-top">
             <span class="club-card-icon">${club.icon}</span>
-            <span class="club-active-tag" style="${activeCount > 0 ? 'background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700; border-color: rgba(16, 185, 129, 0.5);' : ''}">
-              ${activeCount > 0 ? `🟢 ${activeCount} คนใช้งาน` : 'พร้อมใช้งาน'}
-            </span>
+            ${statusBadge}
           </div>
           <div class="club-card-title">${club.name}</div>
           <div class="club-card-desc">
@@ -2944,11 +3145,14 @@ function renderClubsFullDirectory() {
   // Update Summary KPI
   const totalActive = activeLogsCache.length;
   const activeClubsCount = CLUBS.filter(club => getActiveLogsForClub(club).length > 0).length;
+  const openClubsCount = CLUBS.filter(club => getClubOperatingStatus(club.id).isOpenNow).length;
 
   const totalEl = document.getElementById('clubs-total-active');
   if (totalEl) totalEl.textContent = `${totalActive} คน`;
   const clubsCountEl = document.getElementById('clubs-active-count');
   if (clubsCountEl) clubsCountEl.textContent = `${activeClubsCount} / ${CLUBS.length} ชมรม`;
+  const openCountEl = document.getElementById('clubs-open-count');
+  if (openCountEl) openCountEl.textContent = `${openClubsCount} / ${CLUBS.length} ชมรม`;
   const syncTimeEl = document.getElementById('clubs-last-sync-time');
   if (syncTimeEl) syncTimeEl.textContent = formatThaiTime(new Date());
 
@@ -2956,6 +3160,7 @@ function renderClubsFullDirectory() {
     const activeInThisClub = getActiveLogsForClub(club);
     const count = activeInThisClub.length;
     const sched = schedules[club.id] || { days: 'ตามประกาศ', time: 'ตามเวลาทำการ', note: '' };
+    const opStatus = getClubOperatingStatus(club.id);
 
     let occupantsListHtml = '';
     if (count > 0) {
@@ -2963,6 +3168,7 @@ function renderClubsFullDirectory() {
         <div style="background: rgba(0, 0, 0, 0.35); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px solid rgba(16, 185, 129, 0.25);">
           <div style="font-size: 0.78rem; font-weight: 600; color: #34d399; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
             <span>👥 รายชื่อผู้กำลังใช้งาน (${count} คน):</span>
+            ${!opStatus.isOpenNow ? `<span style="font-size: 0.68rem; color: #fbbf24; background: rgba(245, 158, 11, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">⚠️ นอกเวลา</span>` : ''}
           </div>
           <div style="max-height: 120px; overflow-y: auto;">
             ${activeInThisClub.map(log => {
@@ -2981,11 +3187,63 @@ function renderClubsFullDirectory() {
         </div>
       `;
     } else {
-      occupantsListHtml = `
-        <div style="background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px dashed rgba(255,255,255,0.08); text-align: center;">
-          <span style="font-size: 0.78rem; color: var(--text-dim);">⚪ ขณะนี้ยังไม่มีผู้ลงทะเบียน (คอร์ตว่างพร้อมใช้งาน)</span>
-        </div>
+      if (opStatus.isOpenNow) {
+        occupantsListHtml = `
+          <div style="background: rgba(16, 185, 129, 0.05); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px dashed rgba(16, 185, 129, 0.25); text-align: center;">
+            <span style="font-size: 0.78rem; color: #34d399;">🟢 คอร์ตว่าง พร้อมลงทะเบียนเข้าใช้งาน</span>
+          </div>
+        `;
+      } else if (!opStatus.isOpenToday) {
+        occupantsListHtml = `
+          <div style="background: rgba(239, 68, 68, 0.05); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px dashed rgba(239, 68, 68, 0.25); text-align: center;">
+            <span style="font-size: 0.78rem; color: #f87171;">🔴 วันนี้ปิดให้บริการ (เปิดเฉพาะวัน: ${sched.days})</span>
+          </div>
+        `;
+      } else {
+        occupantsListHtml = `
+          <div style="background: rgba(245, 158, 11, 0.05); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; border: 1px dashed rgba(245, 158, 11, 0.25); text-align: center;">
+            <span style="font-size: 0.78rem; color: #fbbf24;">🟡 ขณะนี้นอกเวลาทำการ (${opStatus.reason})</span>
+          </div>
+        `;
+      }
+    }
+
+    // Top-right status badge
+    let topBadgeHtml = '';
+    if (count > 0) {
+      topBadgeHtml = `
+        <span class="status-tag status-active" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; border-color: rgba(16, 185, 129, 0.4);">
+          🟢 กำลังเล่น ${count} คน
+        </span>
       `;
+    } else if (opStatus.isOpenNow) {
+      topBadgeHtml = `
+        <span class="status-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.35);">
+          🟢 พร้อมใช้งาน
+        </span>
+      `;
+    } else if (!opStatus.isOpenToday) {
+      topBadgeHtml = `
+        <span class="status-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.35);">
+          🔴 ปิดทำการวันนี้
+        </span>
+      `;
+    } else {
+      topBadgeHtml = `
+        <span class="status-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 700; border: 1px solid rgba(245, 158, 11, 0.35);">
+          🟡 นอกเวลาทำการ
+        </span>
+      `;
+    }
+
+    // Schedule status live pill
+    let schedStatusPill = '';
+    if (opStatus.isOpenNow) {
+      schedStatusPill = `<span style="font-size: 0.7rem; font-weight: 700; color: #34d399; background: rgba(16, 185, 129, 0.2); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.35);">🟢 เปิดอยู่</span>`;
+    } else if (!opStatus.isOpenToday) {
+      schedStatusPill = `<span style="font-size: 0.7rem; font-weight: 700; color: #f87171; background: rgba(239, 68, 68, 0.2); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.35);">🔴 ปิดวันนี้</span>`;
+    } else {
+      schedStatusPill = `<span style="font-size: 0.7rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.35);">🟡 นอกเวลา</span>`;
     }
 
     return `
@@ -2994,9 +3252,7 @@ function renderClubsFullDirectory() {
           <!-- Header: Icon & Live Status Badge -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <div style="font-size: 2.4rem;">${club.icon}</div>
-            <span class="status-tag ${count > 0 ? 'status-active' : 'status-completed'}" style="${count > 0 ? 'background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; border-color: rgba(16, 185, 129, 0.4);' : ''}">
-              ${count > 0 ? `🟢 กำลังเล่น ${count} คน` : '⚪ ว่าง (0 คน)'}
-            </span>
+            ${topBadgeHtml}
           </div>
 
           <!-- Title & Zone -->
@@ -3005,7 +3261,11 @@ function renderClubsFullDirectory() {
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">${club.desc}</p>
 
           <!-- Club Schedule Information Box (กำหนดการใช้งานสนาม) -->
-          <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 12px; font-size: 0.78rem;">
+          <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 12px; font-size: 0.78rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <span style="font-size: 0.73rem; color: var(--text-muted);">สถานะเปิดสนามขณะนี้:</span>
+              ${schedStatusPill}
+            </div>
             <div style="color: #60a5fa; font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
               <span>📅</span> วันเปิดใช้งาน: <span style="color: #fff; font-weight: 500;">${sched.days}</span>
             </div>
