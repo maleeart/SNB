@@ -912,6 +912,31 @@
     margin-top: 4px;
   }
 
+  /* Analytics Period Filter Buttons */
+  .btn-filter-period {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .btn-filter-period:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+  .btn-filter-period.active {
+    background: #3b82f6;
+    border-color: #60a5fa;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+  }
+
   /* Mobile Bottom Navigation Bar */
   nav.mobile-bottom-nav {
     display: flex;
@@ -1172,6 +1197,27 @@
           <div class="status-tag status-active" id="banner-club-occupants">0 คนในสนาม</div>
         </div>
 
+        <!-- Selected Club Court Schedule Information (กำหนดการใช้สนาม) -->
+        <div id="banner-club-schedule" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.15rem;">📅</span>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">กำหนดการเปิดใช้สนาม</div>
+                <div id="banner-schedule-days" style="font-size: 0.85rem; font-weight: 600; color: #93c5fd;">
+                  วันใช้งาน: จันทร์ - ศุกร์
+                </div>
+              </div>
+            </div>
+            <span class="status-tag status-active" id="banner-schedule-time" style="font-size: 0.75rem; padding: 3px 10px;">
+              ⏰ 16:30 - 20:30 น.
+            </span>
+          </div>
+          <div id="banner-schedule-note" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);">
+            เปิดไฟส่องสว่าง 17:00 น. กรุณาสวมรองเท้ากีฬา
+          </div>
+        </div>
+
         <!-- Digital Clock -->
         <div class="clock-display-wrap">
           <div class="digital-time" id="live-clock">00:00:00</div>
@@ -1372,24 +1418,100 @@
     </div>
   </main>
 
-  <!-- VIEW 4: ANALYTICS DASHBOARD (สถิติภาพรวม) -->
+  <!-- VIEW 4: ANALYTICS DASHBOARD (สถิติภาพรวม พร้อมตัวกรองรายเดือน รายปี) -->
   <main id="view-analytics" class="tab-view">
+    <!-- Analytics Header & Filter Toolbar -->
+    <div class="glass-card" style="margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 600; color: #fff;">📊 สถิติและรายงานภาพรวมการใช้งาน</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">วิเคราะห์แนวโน้มการเข้าใช้งานอาคาร กรองสถิติรายเดือน รายปี และตามชมรม</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-secondary" style="font-size: 0.8rem; padding: 6px 14px;" onclick="syncFromCloud(false); loadAnalytics();">
+            <span>🔄</span> ซิงก์ข้อมูลสถิติ
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Period Filter Buttons (ปุ่มลัดเลือกช่วงเวลา) -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;">
+        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">เลือกช่วงเวลา:</span>
+        <button type="button" class="btn-filter-period active" data-period="all" onclick="setAnalyticsPeriod('all')">
+          ทั้งหมด
+        </button>
+        <button type="button" class="btn-filter-period" data-period="this_month" onclick="setAnalyticsPeriod('this_month')">
+          เดือนนี้
+        </button>
+        <button type="button" class="btn-filter-period" data-period="this_year" onclick="setAnalyticsPeriod('this_year')">
+          ปีนี้
+        </button>
+        <button type="button" class="btn-filter-period" data-period="custom" onclick="setAnalyticsPeriod('custom')">
+          กำหนดเอง
+        </button>
+      </div>
+
+      <!-- Detailed Filters: Year, Month, Club -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+        <div>
+          <label class="form-label" style="font-size: 0.75rem;">📅 กรองรายปี</label>
+          <select id="analytics-filter-year" class="form-select" onchange="onAnalyticsFilterChange()" style="padding: 8px 12px; font-size: 0.85rem;">
+            <!-- Rendered by JS -->
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size: 0.75rem;">🗓️ กรองรายเดือน</label>
+          <select id="analytics-filter-month" class="form-select" onchange="onAnalyticsFilterChange()" style="padding: 8px 12px; font-size: 0.85rem;">
+            <option value="all">ทุกเดือน (ทั้งปี)</option>
+            <option value="0">มกราคม</option>
+            <option value="1">กุมภาพันธ์</option>
+            <option value="2">มีนาคม</option>
+            <option value="3">เมษายน</option>
+            <option value="4">พฤษภาคม</option>
+            <option value="5">มิถุนายน</option>
+            <option value="6">กรกฎาคม</option>
+            <option value="7">สิงหาคม</option>
+            <option value="8">กันยายน</option>
+            <option value="9">ตุลาคม</option>
+            <option value="10">พฤศจิกายน</option>
+            <option value="11">ธันวาคม</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size: 0.75rem;">🏆 กรองตามชมรม</label>
+          <select id="analytics-filter-club" class="form-select" onchange="onAnalyticsFilterChange()" style="padding: 8px 12px; font-size: 0.85rem;">
+            <option value="all">ทุกชมรมและกิจกรรม</option>
+            <option value="basketball">🏀 ชมรมบาสเก็ตบอล</option>
+            <option value="golf">⛳ ชมรมกอล์ฟ</option>
+            <option value="archery">🎯 ชมรมยิงธนู</option>
+            <option value="badminton">🏸 ชมรมแบดมินตัน</option>
+            <option value="heights_training">🦺 อบรมหลักสูตรการทำงานบนที่สูง</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Active Filter Status Indicator -->
+      <div id="analytics-filter-badge" style="margin-top: 12px; font-size: 0.78rem; color: #60a5fa; display: flex; align-items: center; gap: 6px; background: rgba(59, 130, 246, 0.08); padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(59, 130, 246, 0.2);">
+        <span>🔍</span> <span id="analytics-filter-text">แสดงสถิติทั้งหมด (ไม่จำกัดช่วงเวลา)</span>
+      </div>
+    </div>
+
     <!-- Stat KPI Summary Cards -->
     <div class="stats-summary-grid">
       <div class="stat-box">
-        <span class="stat-label">จำนวนเข้าใช้งานทั้งหมด</span>
+        <span class="stat-label">จำนวนครั้งเข้าใช้งาน</span>
         <span class="stat-number" id="kpi-total-visits">0</span>
-        <span class="stat-trend">📊 ข้อมูลสะสมในระบบ</span>
+        <span class="stat-trend" id="kpi-total-visits-sub">📊 รายการตามตัวกรอง</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">เข้าใช้งานวันนี้</span>
-        <span class="stat-number" id="kpi-today-visits" style="color: #60a5fa;">0</span>
-        <span class="stat-trend" id="kpi-today-trend">คนในวันนี้</span>
+        <span class="stat-label">ชั่วโมงใช้งานรวม</span>
+        <span class="stat-number" id="kpi-today-visits" style="color: #60a5fa;">0 ชม.</span>
+        <span class="stat-trend" id="kpi-today-trend">เวลารวม (นาที)</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">อยู่ในอาคารขณะนี้</span>
+        <span class="stat-label">สมาชิกที่มาใช้ (คนไม่ซ้ำ)</span>
         <span class="stat-number" id="kpi-active-now" style="color: #34d399;">0</span>
-        <span class="stat-trend">🟢 Active ตอนนี้</span>
+        <span class="stat-trend">👥 Unique Members</span>
       </div>
       <div class="stat-box">
         <span class="stat-label">ชมรมยอดนิยม</span>
@@ -1519,6 +1641,30 @@
           <strong>โครงสร้างระบบฐานข้อมูล:</strong><br>
           • Local Storage: IndexedDB ObjectStore (ความจุไม่จำกัด, ความเร็วสูง, ปลอดภัย)<br>
           • มีไฟล์ <code>database_schema.sql</code> และ <code>google_sheets_apps_script.js</code> อยู่ในโฟลเดอร์โครงการสำหรับนำไปติดตั้งบนคลาวด์
+        </div>
+      </div>
+
+      <!-- Admin Club Court Schedules Editor Card (กำหนดการใช้สนามของแต่ละชมรม) -->
+      <div class="glass-card" style="grid-column: 1 / -1; margin-top: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 600; color: #fff;">📅 กำหนดการและเวลาเปิดใช้งานสนามแต่ละชมรม (เฉพาะ Admin)</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              กำหนดวันและช่วงเวลาเปิดใช้งานของแต่ละชมรม ข้อมูลนี้จะแสดงบนหน้าแรกและหน้ารายละเอียดชมรมให้สมาชิกทราบ
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="resetClubSchedulesToDefault()">
+              ↺ คืนค่าเริ่มต้น
+            </button>
+            <button type="button" class="btn-checkin-action btn-in" style="font-size: 0.85rem; padding: 8px 18px;" onclick="saveClubSchedulesFromSettings()">
+              💾 บันทึกกำหนดการ
+            </button>
+          </div>
+        </div>
+
+        <div id="admin-schedules-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Populated by JS -->
         </div>
       </div>
 
@@ -1737,6 +1883,73 @@ const DEPTS = [
   'บุคคลภายนอก / ผู้ติดตาม',
   'อื่นๆ'
 ];
+
+/* ─── DEFAULT CLUB COURT SCHEDULES (กำหนดการใช้งานสนามของแต่ละชมรม) ─── */
+const DEFAULT_CLUB_SCHEDULES = {
+  basketball: {
+    days: 'จันทร์ - ศุกร์',
+    time: '16:30 - 20:30 น.',
+    note: 'เปิดไฟส่องสว่าง 17:00 น. กรุณาสวมใส่รองเท้ากีฬา'
+  },
+  golf: {
+    days: 'อังคาร, พฤหัสบดี, เสาร์',
+    time: '16:00 - 20:00 น.',
+    note: 'สนามฝึกวงสวิง 8 ช่องไดรฟ์ และกรีนซ้อมชิป-พัตต์'
+  },
+  archery: {
+    days: 'พุธ, ศุกร์, อาทิตย์',
+    time: '16:30 - 19:30 น.',
+    note: 'ลู่ยิงระยะ 10ม. และ 18ม. ต้องผ่านการอบรมความปลอดภัยก่อนใช้งาน'
+  },
+  badminton: {
+    days: 'จันทร์ - ศุกร์',
+    time: '16:30 - 21:00 น.',
+    note: 'คอร์ต 1-3 สวมรองเท้าพื้นยาง non-marking สำหรับคอร์ตในร่ม'
+  },
+  heights_training: {
+    days: 'จันทร์ - ศุกร์ (ตามตารางหลักสูตร)',
+    time: '08:30 - 16:30 น.',
+    note: 'เฉพาะผู้เข้ารับการอบรมตามหลักสูตรความปลอดภัย กฟผ.'
+  }
+};
+
+function getClubSchedules() {
+  try {
+    const saved = localStorage.getItem('snb_club_schedules');
+    if (saved) {
+      return { ...DEFAULT_CLUB_SCHEDULES, ...JSON.parse(saved) };
+    }
+  } catch(e) {}
+  return { ...DEFAULT_CLUB_SCHEDULES };
+}
+
+function saveClubSchedules(schedules) {
+  localStorage.setItem('snb_club_schedules', JSON.stringify(schedules));
+  toast('บันทึกกำหนดการใช้สนามเรียบร้อย ✓');
+  updateBannerClubSchedule();
+  renderClubsQuickGrid();
+}
+
+function updateBannerClubSchedule() {
+  const club = getSelectedClub();
+  const schedules = getClubSchedules();
+  const sched = schedules[club.id] || { days: 'ตามประกาศ', time: 'ตามเวลาทำการ', note: '' };
+
+  const daysEl = document.getElementById('banner-schedule-days');
+  const timeEl = document.getElementById('banner-schedule-time');
+  const noteEl = document.getElementById('banner-schedule-note');
+
+  if (daysEl) daysEl.textContent = `วันใช้งาน: ${sched.days}`;
+  if (timeEl) timeEl.textContent = `⏰ ${sched.time}`;
+  if (noteEl) {
+    if (sched.note) {
+      noteEl.style.display = 'block';
+      noteEl.textContent = `ℹ️ ${sched.note}`;
+    } else {
+      noteEl.style.display = 'none';
+    }
+  }
+}
 
 // Fallback Google Form endpoint from original app
 const LEGACY_GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf8rkeKjetfqxsfN7xwrMqtLoQDMCvuXR1utfMWjMaf3WMzZQ/formResponse';
@@ -2168,6 +2381,7 @@ function selectClub(clubId) {
   if (bZone) bZone.textContent = club.zone;
 
   updateBannerClubOccupants();
+  updateBannerClubSchedule();
   renderClubTabs();
   renderCheckInArea();
   updateCanvasTheme(club);
@@ -2674,8 +2888,9 @@ async function refreshDataViews() {
   const activeBadge = document.getElementById('active-count-badge');
   if (activeBadge) activeBadge.textContent = `${activeLogsCache.length} คน`;
 
-  // Update club hero banner occupants tag
+  // Update club hero banner occupants tag & schedule
   updateBannerClubOccupants();
+  updateBannerClubSchedule();
 
   // Update club tabs counter
   renderClubTabs();
@@ -2686,10 +2901,12 @@ async function refreshDataViews() {
 
 function renderClubsQuickGrid() {
   const container = document.getElementById('clubs-quick-grid');
+  const schedules = getClubSchedules();
   if (container) {
     container.innerHTML = CLUBS.map(club => {
       const activeInClub = getActiveLogsForClub(club);
       const activeCount = activeInClub.length;
+      const sched = schedules[club.id] || { days: 'ตามประกาศ', time: 'ตามเวลาทำการ' };
       return `
         <div class="club-card-widget" style="--item-accent: ${club.color};" onclick="selectClub('${club.id}')">
           <div class="club-card-top">
@@ -2699,7 +2916,12 @@ function renderClubsQuickGrid() {
             </span>
           </div>
           <div class="club-card-title">${club.name}</div>
-          <div class="club-card-desc">${club.zone}</div>
+          <div class="club-card-desc">
+            <div>${club.zone}</div>
+            <div style="font-size: 0.72rem; color: #60a5fa; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+              <span>📅</span> <span>${sched.days} • ⏰ ${sched.time}</span>
+            </div>
+          </div>
           <div class="club-card-action">
             <span>คลิกเพื่อสลับชมรมนี้</span>
             <span>→</span>
@@ -2717,6 +2939,8 @@ function renderClubsFullDirectory() {
   const dirContainer = document.getElementById('clubs-full-directory');
   if (!dirContainer) return;
 
+  const schedules = getClubSchedules();
+
   // Update Summary KPI
   const totalActive = activeLogsCache.length;
   const activeClubsCount = CLUBS.filter(club => getActiveLogsForClub(club).length > 0).length;
@@ -2731,6 +2955,7 @@ function renderClubsFullDirectory() {
   dirContainer.innerHTML = CLUBS.map(club => {
     const activeInThisClub = getActiveLogsForClub(club);
     const count = activeInThisClub.length;
+    const sched = schedules[club.id] || { days: 'ตามประกาศ', time: 'ตามเวลาทำการ', note: '' };
 
     let occupantsListHtml = '';
     if (count > 0) {
@@ -2777,7 +3002,18 @@ function renderClubsFullDirectory() {
           <!-- Title & Zone -->
           <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 2px;">${club.name}</h3>
           <p style="font-size: 0.78rem; color: #60a5fa; margin-bottom: 8px;">${club.zone}</p>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">${club.desc}</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">${club.desc}</p>
+
+          <!-- Club Schedule Information Box (กำหนดการใช้งานสนาม) -->
+          <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 12px; font-size: 0.78rem;">
+            <div style="color: #60a5fa; font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
+              <span>📅</span> วันเปิดใช้งาน: <span style="color: #fff; font-weight: 500;">${sched.days}</span>
+            </div>
+            <div style="color: #34d399; font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
+              <span>⏰</span> เวลาเปิดใช้งาน: <span style="color: #fff; font-weight: 500;">${sched.time}</span>
+            </div>
+            ${sched.note ? `<div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 4px;">ℹ️ ${sched.note}</div>` : ''}
+          </div>
 
           <!-- Highlight Occupants Count Banner -->
           <div style="background: ${count > 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${count > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.08)'}; border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
@@ -3193,34 +3429,149 @@ function importDatabaseJSON(event) {
   reader.readAsText(file);
 }
 
-/* ─── ANALYTICS & STATS ─── */
-async function loadAnalytics() {
-  const logs = await appDB.getAllLogs();
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+/* ─── ANALYTICS & STATS (WITH MONTH/YEAR/CLUB FILTERS) ─── */
+let currentAnalyticsPeriod = 'all';
 
-  // KPI 1: Total
-  document.getElementById('kpi-total-visits').textContent = logs.length;
-
-  // KPI 2: Today
-  const todayLogs = logs.filter(l => {
-    const d = new Date(l.checkInTime);
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` === todayStr;
+function populateAnalyticsYearDropdown(logs) {
+  const select = document.getElementById('analytics-filter-year');
+  if (!select) return;
+  const years = new Set();
+  const currentYear = new Date().getFullYear();
+  years.add(currentYear);
+  (logs || []).forEach(l => {
+    if (l.checkInTime) {
+      const y = new Date(l.checkInTime).getFullYear();
+      if (!isNaN(y)) years.add(y);
+    }
   });
-  document.getElementById('kpi-today-visits').textContent = todayLogs.length;
 
-  // KPI 3: Active Now
-  const activeNow = logs.filter(l => l.status === 'active').length;
-  document.getElementById('kpi-active-now').textContent = activeNow;
+  const sortedYears = Array.from(years).sort((a,b) => b - a);
+  const currentVal = select.value;
+  select.innerHTML = `<option value="all">ทุกปี (ทั้งหมด)</option>` + sortedYears.map(y => {
+    return `<option value="${y}">ปี ${y + 543} (${y})</option>`;
+  }).join('');
+  if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+    select.value = currentVal;
+  }
+}
 
-  // Club Breakdown
+function setAnalyticsPeriod(period) {
+  currentAnalyticsPeriod = period;
+  document.querySelectorAll('.btn-filter-period').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.period === period);
+  });
+
+  const now = new Date();
+  const yearSelect = document.getElementById('analytics-filter-year');
+  const monthSelect = document.getElementById('analytics-filter-month');
+
+  if (period === 'all') {
+    if (yearSelect) yearSelect.value = 'all';
+    if (monthSelect) monthSelect.value = 'all';
+  } else if (period === 'this_month') {
+    if (yearSelect) yearSelect.value = String(now.getFullYear());
+    if (monthSelect) monthSelect.value = String(now.getMonth());
+  } else if (period === 'this_year') {
+    if (yearSelect) yearSelect.value = String(now.getFullYear());
+    if (monthSelect) monthSelect.value = 'all';
+  }
+  loadAnalytics();
+}
+
+function onAnalyticsFilterChange() {
+  currentAnalyticsPeriod = 'custom';
+  document.querySelectorAll('.btn-filter-period').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.period === 'custom');
+  });
+  loadAnalytics();
+}
+
+async function loadAnalytics() {
+  const allLogs = await appDB.getAllLogs();
+  populateAnalyticsYearDropdown(allLogs);
+
+  const yearVal = document.getElementById('analytics-filter-year')?.value || 'all';
+  const monthVal = document.getElementById('analytics-filter-month')?.value || 'all';
+  const clubVal = document.getElementById('analytics-filter-club')?.value || 'all';
+
+  // Filter logs by period and club
+  const filtered = allLogs.filter(log => {
+    if (!log.checkInTime) return false;
+    const d = new Date(log.checkInTime);
+    if (isNaN(d.getTime())) return false;
+
+    // Filter Year
+    if (yearVal !== 'all' && d.getFullYear() !== Number(yearVal)) {
+      return false;
+    }
+
+    // Filter Month
+    if (monthVal !== 'all' && d.getMonth() !== Number(monthVal)) {
+      return false;
+    }
+
+    // Filter Club
+    if (clubVal !== 'all') {
+      const targetClub = CLUBS.find(c => c.id === clubVal);
+      const matchClub = (log.clubId === clubVal || (targetClub && log.clubName === targetClub.name));
+      if (!matchClub) return false;
+    }
+
+    return true;
+  });
+
+  // Update Status text
+  const badgeText = document.getElementById('analytics-filter-text');
+  if (badgeText) {
+    let desc = [];
+    if (yearVal !== 'all') desc.push(`ปี ${Number(yearVal) + 543}`);
+    else desc.push('ทุกปี');
+
+    if (monthVal !== 'all') desc.push(`เดือน ${THAI_MONTHS[Number(monthVal)]}`);
+    else desc.push('ทุกเดือน');
+
+    if (clubVal !== 'all') {
+      const cl = CLUBS.find(c => c.id === clubVal);
+      if (cl) desc.push(cl.name);
+    } else {
+      desc.push('ทุกชมรม');
+    }
+    badgeText.textContent = `ผลการกรอง: ${desc.join(' • ')} (พบ ${filtered.length} รายการ)`;
+  }
+
+  // KPI 1: Total Visits in period
+  const totalVisitsEl = document.getElementById('kpi-total-visits');
+  if (totalVisitsEl) totalVisitsEl.textContent = filtered.length;
+
+  // KPI 2: Total Hours & Minutes in period
+  let totalMinutes = 0;
+  filtered.forEach(l => {
+    if (l.durationMinutes && Number(l.durationMinutes) > 0) {
+      totalMinutes += Number(l.durationMinutes);
+    } else if (l.checkInTime && l.checkOutTime) {
+      const dur = Math.max(1, Math.round((new Date(l.checkOutTime) - new Date(l.checkInTime)) / 60000));
+      totalMinutes += dur;
+    }
+  });
+  const totalHours = (totalMinutes / 60).toFixed(1);
+  const kpiHoursEl = document.getElementById('kpi-today-visits');
+  if (kpiHoursEl) kpiHoursEl.textContent = `${totalHours} ชม.`;
+  const kpiHoursTrend = document.getElementById('kpi-today-trend');
+  if (kpiHoursTrend) kpiHoursTrend.textContent = `เวลารวม (${totalMinutes} นาที)`;
+
+  // KPI 3: Unique Users in period
+  const uniqueUsers = new Set(filtered.map(l => l.userName).filter(Boolean));
+  const kpiActiveEl = document.getElementById('kpi-active-now');
+  if (kpiActiveEl) kpiActiveEl.textContent = uniqueUsers.size;
+
+  // KPI 4: Top Club in period
   const clubCounts = {};
   CLUBS.forEach(c => clubCounts[c.id] = 0);
-  logs.forEach(l => {
-    if (clubCounts[l.clubId] !== undefined) clubCounts[l.clubId]++;
+  filtered.forEach(l => {
+    const matched = CLUBS.find(c => c.id === l.clubId || c.name === l.clubName);
+    if (matched) clubCounts[matched.id]++;
   });
 
-  // Top Club
   let topClubId = 'basketball';
   let maxClubCount = -1;
   for (const cid in clubCounts) {
@@ -3230,53 +3581,136 @@ async function loadAnalytics() {
     }
   }
   const topClubObj = CLUBS.find(c => c.id === topClubId) || CLUBS[0];
-  document.getElementById('kpi-top-club').textContent = `${topClubObj.icon} ${topClubObj.name}`;
-  document.getElementById('kpi-top-club-sub').textContent = `${maxClubCount} ครั้ง (${logs.length > 0 ? Math.round((maxClubCount/logs.length)*100) : 0}%)`;
+  const topClubEl = document.getElementById('kpi-top-club');
+  const topClubSubEl = document.getElementById('kpi-top-club-sub');
+  if (topClubEl) {
+    if (maxClubCount > 0) {
+      topClubEl.textContent = `${topClubObj.icon} ${topClubObj.name}`;
+      if (topClubSubEl) topClubSubEl.textContent = `${maxClubCount} ครั้ง (${Math.round((maxClubCount / filtered.length) * 100)}%)`;
+    } else {
+      topClubEl.textContent = '-';
+      if (topClubSubEl) topClubSubEl.textContent = 'ไม่มีข้อมูลในช่วงเวลานี้';
+    }
+  }
 
-  // Render Club Bars
+  // Render Club Breakdown Bars
   const clubBarsEl = document.getElementById('analytics-club-bars');
-  clubBarsEl.innerHTML = CLUBS.map(club => {
-    const count = clubCounts[club.id] || 0;
-    const pct = logs.length > 0 ? Math.round((count / logs.length) * 100) : 0;
+  if (clubBarsEl) {
+    if (filtered.length === 0) {
+      clubBarsEl.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding: 20px;">ไม่มีข้อมูลสถิติในช่วงเวลาที่เลือก</div>`;
+    } else {
+      clubBarsEl.innerHTML = CLUBS.map(club => {
+        const count = clubCounts[club.id] || 0;
+        const pct = filtered.length > 0 ? Math.round((count / filtered.length) * 100) : 0;
+        return `
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
+              <span>${club.icon} ${club.name}</span>
+              <span style="font-weight: 600;">${count} ครั้ง (${pct}%)</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="background: ${club.color}; width: ${pct}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Render Department Breakdown Bars
+  const deptBarsEl = document.getElementById('analytics-dept-bars');
+  if (deptBarsEl) {
+    const deptCounts = {};
+    filtered.forEach(l => {
+      const dept = l.department || 'อื่นๆ';
+      deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+    });
+    const deptSorted = Object.entries(deptCounts).sort((a,b) => b[1] - a[1]);
+
+    if (deptSorted.length === 0) {
+      deptBarsEl.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding: 20px;">ไม่มีข้อมูลสถิติในช่วงเวลาที่เลือก</div>`;
+    } else {
+      deptBarsEl.innerHTML = deptSorted.map(([dept, count]) => {
+        const pct = filtered.length > 0 ? Math.round((count / filtered.length) * 100) : 0;
+        return `
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
+              <span>🏢 ${dept}</span>
+              <span style="font-weight: 600;">${count} คน (${pct}%)</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="background: #60a5fa; width: ${pct}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+/* ─── SETTINGS & SCHEDULES MANAGEMENT ─── */
+function renderAdminSchedulesEditor() {
+  const container = document.getElementById('admin-schedules-list');
+  if (!container) return;
+
+  const schedules = getClubSchedules();
+  container.innerHTML = CLUBS.map(club => {
+    const sched = schedules[club.id] || { days: 'จันทร์ - ศุกร์', time: '16:30 - 20:30 น.', note: '' };
     return `
-      <div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
-          <span>${club.icon} ${club.name}</span>
-          <span style="font-weight: 600;">${count} ครั้ง (${pct}%)</span>
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-left: 4px solid ${club.color}; border-radius: var(--radius-md); padding: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <span style="font-size: 1.4rem;">${club.icon}</span>
+          <strong style="color: #fff; font-size: 0.95rem;">${club.name}</strong>
+          <span style="color: var(--text-dim); font-size: 0.78rem;">(${club.zone})</span>
         </div>
-        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
-          <div style="background: ${club.color}; width: ${pct}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+          <div>
+            <label class="form-label" style="font-size: 0.75rem;">📅 วันเปิดใช้งานสนาม</label>
+            <input type="text" id="sched-days-${club.id}" class="form-input" value="${sched.days}" placeholder="เช่น จันทร์ - ศุกร์">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 0.75rem;">⏰ ช่วงเวลาเปิดใช้งาน</label>
+            <input type="text" id="sched-time-${club.id}" class="form-input" value="${sched.time}" placeholder="เช่น 16:30 - 20:30 น.">
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label class="form-label" style="font-size: 0.75rem;">ℹ️ ข้อกำหนด / คำแนะนำการใช้งาน</label>
+            <input type="text" id="sched-note-${club.id}" class="form-input" value="${sched.note || ''}" placeholder="เช่น สวมรองเท้ากีฬา, เปิดไฟ 17:00 น.">
+          </div>
         </div>
       </div>
     `;
   }).join('');
-
-  // Department Breakdown
-  const deptCounts = {};
-  logs.forEach(l => {
-    const dept = l.department || 'อื่นๆ';
-    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-  });
-  const deptSorted = Object.entries(deptCounts).sort((a,b) => b[1] - a[1]);
-
-  const deptBarsEl = document.getElementById('analytics-dept-bars');
-  deptBarsEl.innerHTML = deptSorted.slice(0, 6).map(([dept, count]) => {
-    const pct = logs.length > 0 ? Math.round((count / logs.length) * 100) : 0;
-    return `
-      <div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
-          <span>🏢 ${dept}</span>
-          <span style="font-weight: 600;">${count} ครั้ง (${pct}%)</span>
-        </div>
-        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
-          <div style="background: #3b82f6; width: ${pct}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
-        </div>
-      </div>
-    `;
-  }).join('') || '<div style="color:var(--text-dim);text-align:center;">ยังไม่มีข้อมูลสถิติ</div>';
 }
 
-/* ─── SETTINGS & SAMPLE DATA GENERATOR ─── */
+function saveClubSchedulesFromSettings() {
+  const schedules = getClubSchedules();
+  CLUBS.forEach(club => {
+    const daysEl = document.getElementById(`sched-days-${club.id}`);
+    const timeEl = document.getElementById(`sched-time-${club.id}`);
+    const noteEl = document.getElementById(`sched-note-${club.id}`);
+    if (daysEl && timeEl) {
+      schedules[club.id] = {
+        days: daysEl.value.trim() || 'ตามประกาศ',
+        time: timeEl.value.trim() || 'ตามเวลาทำการ',
+        note: (noteEl ? noteEl.value.trim() : '')
+      };
+    }
+  });
+
+  saveClubSchedules(schedules);
+  renderAdminSchedulesEditor();
+}
+
+function resetClubSchedulesToDefault() {
+  if (confirm('ต้องการคืนค่ากำหนดการของทุกชมรมเป็นค่าเริ่มต้นหรือไม่?')) {
+    localStorage.removeItem('snb_club_schedules');
+    toast('คืนค่ากำหนดการเริ่มต้นแล้ว ✓');
+    renderAdminSchedulesEditor();
+    updateBannerClubSchedule();
+    renderClubsQuickGrid();
+  }
+}
+
 function loadSettingsInputs() {
   const profile = getUserProfile() || {};
   document.getElementById('setting-name').value = profile.name || '';
@@ -3286,6 +3720,7 @@ function loadSettingsInputs() {
   const currentUrl = getCloudApiUrl();
   document.getElementById('setting-cloud-url').value = currentUrl;
   updateSettingsCloudStatus(currentUrl);
+  renderAdminSchedulesEditor();
 }
 
 function updateSettingsCloudStatus(url) {
