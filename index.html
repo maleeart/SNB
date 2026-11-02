@@ -1552,10 +1552,15 @@
 <script>
 /* ─── CLOUD DATABASE CONFIGURATION ─── */
 // ใส่ URL ของ Google Apps Script Web App ที่นี่ เพื่อให้ทุกเครื่องที่เปิดเว็บนี้ (แม้ไม่ได้ตั้งค่าเอง) ซิงก์ฐานข้อมูลกลางอัตโนมัติ
-const DEFAULT_CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbx6FEzanKOXVBoy_2HO1v7czt7XvawkIqYx0s77KcPAJP-YwJ_BoPMtuGOSMqQzyJB0MA/exec';
+const DEFAULT_CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbwVpaOhEtPtK9r6Xh84NLsdhFPINoLNQDIjIZDxc3Txxox65mPDxcePeXKN572VsWkeag/exec';
 
 function getCloudApiUrl() {
-  return localStorage.getItem('snb_cloud_url') || DEFAULT_CLOUD_API_URL;
+  const custom = localStorage.getItem('snb_cloud_url');
+  if (custom && custom.includes('AKfycbx6FEzanKOXVBoy_2HO1v7czt7XvawkIqYx0s77KcPAJP-YwJ_BoPMtuGOSMqQzyJB0MA')) {
+    localStorage.removeItem('snb_cloud_url');
+    return DEFAULT_CLOUD_API_URL;
+  }
+  return custom || DEFAULT_CLOUD_API_URL;
 }
 
 /* ─── CONSTANTS & CLUBS MASTER DATA ─── */
