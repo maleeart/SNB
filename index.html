@@ -1552,7 +1552,7 @@
 <script>
 /* ─── CLOUD DATABASE CONFIGURATION ─── */
 // ใส่ URL ของ Google Apps Script Web App ที่นี่ เพื่อให้ทุกเครื่องที่เปิดเว็บนี้ (แม้ไม่ได้ตั้งค่าเอง) ซิงก์ฐานข้อมูลกลางอัตโนมัติ
-const DEFAULT_CLOUD_API_URL = '';
+const DEFAULT_CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbx6FEzanKOXVBoy_2HO1v7czt7XvawkIqYx0s77KcPAJP-YwJ_BoPMtuGOSMqQzyJB0MA/exec';
 
 function getCloudApiUrl() {
   return localStorage.getItem('snb_cloud_url') || DEFAULT_CLOUD_API_URL;
@@ -2392,7 +2392,18 @@ async function syncFromCloud(silent = false) {
     }
   } catch(e) {
     console.warn('Sync from cloud failed', e);
-    if (!silent) toast('เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาตรวจสอบ URL หรือสิทธิ์การเข้าถึง', true);
+    if (!silent) toast('เชื่อมต่อ Google Sheets ไม่สำเร็จ (โปรดตรวจสอบสิทธิ์ "ทุกคน")', true);
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.style.background = 'rgba(239, 68, 68, 0.12)';
+      banner.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+    }
+    if (bannerText) {
+      bannerText.innerHTML = `
+        <strong style="color: #ef4444;">⚠️ ไม่สามารถเชื่อมต่อ Google Sheets ได้</strong><br>
+        <span style="color: var(--text-muted);">หากติดสิทธิ์การเข้าถึง โปรดตรวจสอบในการ Deploy ของ Apps Script ว่าได้เลือก <strong>"ผู้มีสิทธิ์เข้าถึง (Who has access)"</strong> เป็น <strong>"ทุกคน (Anyone)"</strong></span>
+      `;
+    }
   }
   return false;
 }
