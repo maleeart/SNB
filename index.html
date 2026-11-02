@@ -1820,13 +1820,34 @@
             <button type="button" class="btn-checkin-action btn-in" style="font-size: 0.85rem; padding: 8px 16px; background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.5); color: #34d399;" onclick="openAddClubModal()">
               ➕ เพิ่มชมรมใหม่
             </button>
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="fetchClubsFromCloudManual()" title="ดึงข้อมูลกำหนดการล่าสุดจาก Google Sheets กลาง">
+              🔄 ดึงจากคลาวด์
+            </button>
+            <label class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; margin-bottom: 0;" title="นำเข้าการตั้งค่าชมรมจากไฟล์ .json">
+              <span>📥</span> นำเข้า JSON
+              <input type="file" id="import-clubs-file" accept=".json" style="display: none;" onchange="importClubsJSON(event)">
+            </label>
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="exportClubsJSON()" title="ส่งออกการตั้งค่าชมรมเป็นไฟล์ .json">
+              <span>📤</span> ส่งออก JSON
+            </button>
             <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="resetClubsAndSchedulesToDefault()">
               ↺ คืนค่าเริ่มต้น
             </button>
             <button type="button" class="btn-checkin-action btn-in" style="font-size: 0.85rem; padding: 8px 18px;" onclick="saveAllClubsFromSettings()">
-              💾 บันทึกการเปลี่ยนแปลง
+              💾 บันทึกและซิงก์คลาวด์
             </button>
           </div>
+        </div>
+
+        <!-- Cloud Sync Info Bar -->
+        <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-md); padding: 8px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.78rem;">
+          <div style="color: #93c5fd; display: flex; align-items: center; gap: 6px;">
+            <span>☁️</span> <strong>การซิงก์กำหนดการอัตโนมัติ:</strong>
+            <span style="color: var(--text-dim);">เมื่อกด "บันทึก" การเปลี่ยนแปลงจะถูกส่งขึ้น Google Sheets ทันที ทำให้ทุกคอมพิวเตอร์และมือถือเห็นกำหนดการตรงกัน</span>
+          </div>
+          <button type="button" class="btn-secondary" style="font-size: 0.72rem; padding: 3px 8px;" onclick="syncClubsToCloud(CLUBS); toast('ส่งข้อมูลกำหนดการขึ้น Cloud เรียบร้อย ✓');">
+            ⚡ ซิงก์ขึ้น Cloud ตอนนี้
+          </button>
         </div>
 
         <div id="admin-schedules-list" style="display: flex; flex-direction: column; gap: 12px;">
@@ -2200,9 +2221,14 @@ const DAY_NAMES_THAI = ['อาทิตย์', 'จันทร์', 'อั�
 const DAY_SHORT_THAI = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
 function formatOpenDaysThai(openDays) {
-  if (!openDays || openDays.length === 0) return 'ยังไม่ได้กำหนดวัน';
-  if (openDays.length === 7) return 'ทุกวัน';
-  const sorted = [...openDays].sort((a, b) => a - b);
+  if (!openDays) return 'ยังไม่ได้กำหนดวัน';
+  let daysArr = Array.isArray(openDays) ? openDays : [];
+  if (typeof openDays === 'string') {
+    daysArr = openDays.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d));
+  }
+  if (daysArr.length === 0) return 'ยังไม่ได้กำหนดวัน';
+  if (daysArr.length === 7) return 'ทุกวัน';
+  const sorted = [...daysArr].sort((a, b) => a - b);
   if (sorted.length === 5 && [1, 2, 3, 4, 5].every(d => sorted.includes(d))) {
     return 'จันทร์ - ศุกร์';
   }
@@ -2212,7 +2238,7 @@ function formatOpenDaysThai(openDays) {
   if (sorted.length === 6 && [1, 2, 3, 4, 5, 6].every(d => sorted.includes(d))) {
     return 'จันทร์ - เสาร์';
   }
-  return sorted.map(d => DAY_NAMES_THAI[d]).join(', ');
+  return sorted.map(d => DAY_NAMES_THAI[d] || '').filter(Boolean).join(', ');
 }
 
 function getStoredClubs() {
@@ -2257,23 +2283,36 @@ function populateClubDropdowns() {
 function getClubOperatingStatus(clubId, now = new Date()) {
   const club = CLUBS.find(c => c.id === clubId);
   if (!club) {
+    const defaultText = 'ไม่พบข้อมูลชมรม';
     return {
       isOpenNow: false,
       isOpenToday: false,
       statusCode: 'closed',
       statusText: 'ปิดทำการ',
-      reason: 'ไม่พบข้อมูลชมรม',
+      reason: defaultText,
       statusColor: '#f87171',
       statusBg: 'rgba(239, 68, 68, 0.15)',
       statusBorder: 'rgba(239, 68, 68, 0.35)',
       daysText: 'ไม่ระบุวัน',
-      timeText: 'ไม่ระบุเวลา'
+      timeText: 'ไม่ระบุเวลา',
+      days: 'ไม่ระบุวัน',
+      time: 'ไม่ระบุเวลา',
+      sched: { days: 'ไม่ระบุวัน', time: 'ไม่ระบุเวลา' },
+      club: null
     };
   }
 
   const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
   const currentMin = now.getHours() * 60 + now.getMinutes();
-  const openDays = club.openDays || [];
+
+  // Parse openDays safely whether array or string
+  let openDays = [];
+  if (Array.isArray(club.openDays)) {
+    openDays = club.openDays.map(d => parseInt(d, 10)).filter(d => !isNaN(d));
+  } else if (typeof club.openDays === 'string') {
+    openDays = club.openDays.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d));
+  }
+
   const daysText = formatOpenDaysThai(openDays);
   const timeText = (club.startTime && club.endTime) ? `${club.startTime} - ${club.endTime} น.` : 'ตลอดวัน';
 
@@ -2283,11 +2322,11 @@ function getClubOperatingStatus(clubId, now = new Date()) {
   // Parse club hours
   let startMin = 0;
   let endMin = 24 * 60;
-  if (club.startTime) {
+  if (club.startTime && typeof club.startTime === 'string' && club.startTime.includes(':')) {
     const parts = club.startTime.split(':');
     startMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
   }
-  if (club.endTime) {
+  if (club.endTime && typeof club.endTime === 'string' && club.endTime.includes(':')) {
     const parts = club.endTime.split(':');
     endMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
   }
@@ -2297,9 +2336,20 @@ function getClubOperatingStatus(clubId, now = new Date()) {
     ? (currentMin >= startMin && currentMin <= endMin)
     : (currentMin >= startMin || currentMin <= endMin);
 
+  // Common response base ensuring all possible property accesses succeed
+  const baseResult = {
+    daysText,
+    timeText,
+    days: daysText,
+    time: timeText,
+    sched: { days: daysText, time: timeText },
+    club
+  };
+
   // 1. Manual Closed Mode
   if (club.statusMode === 'closed') {
     return {
+      ...baseResult,
       isOpenNow: false,
       isOpenToday,
       statusCode: 'closed',
@@ -2307,16 +2357,14 @@ function getClubOperatingStatus(clubId, now = new Date()) {
       reason: 'ปิดปรับปรุง / ปิดทำการชั่วคราว',
       statusColor: '#f87171',
       statusBg: 'rgba(239, 68, 68, 0.15)',
-      statusBorder: 'rgba(239, 68, 68, 0.35)',
-      daysText,
-      timeText,
-      club
+      statusBorder: 'rgba(239, 68, 68, 0.35)'
     };
   }
 
   // 2. สถานะพร้อมใช้งาน: อยู่ในวันที่กำหนด และอยู่ในช่วงเวลาที่กำหนด
   if (isOpenToday && isWithinClubHours) {
     return {
+      ...baseResult,
       isOpenNow: true,
       isOpenToday: true,
       statusCode: 'ready',
@@ -2324,10 +2372,7 @@ function getClubOperatingStatus(clubId, now = new Date()) {
       reason: 'เปิดให้บริการตามเวลาปกติ',
       statusColor: '#34d399',
       statusBg: 'rgba(16, 185, 129, 0.15)',
-      statusBorder: 'rgba(16, 185, 129, 0.35)',
-      daysText,
-      timeText,
-      club
+      statusBorder: 'rgba(16, 185, 129, 0.35)'
     };
   }
 
@@ -2340,6 +2385,7 @@ function getClubOperatingStatus(clubId, now = new Date()) {
       reasonText = `หมดเวลาเปิดสนามวันนี้ (${timeText})`;
     }
     return {
+      ...baseResult,
       isOpenNow: false,
       isOpenToday: true,
       statusCode: 'outside_hours',
@@ -2347,10 +2393,7 @@ function getClubOperatingStatus(clubId, now = new Date()) {
       reason: reasonText,
       statusColor: '#fbbf24',
       statusBg: 'rgba(245, 158, 11, 0.15)',
-      statusBorder: 'rgba(245, 158, 11, 0.35)',
-      daysText,
-      timeText,
-      club
+      statusBorder: 'rgba(245, 158, 11, 0.35)'
     };
   }
 
@@ -2365,6 +2408,7 @@ function getClubOperatingStatus(clubId, now = new Date()) {
   }
 
   return {
+    ...baseResult,
     isOpenNow: false,
     isOpenToday: false,
     statusCode: 'closed',
@@ -2372,11 +2416,51 @@ function getClubOperatingStatus(clubId, now = new Date()) {
     reason: closedReason,
     statusColor: '#f87171',
     statusBg: 'rgba(239, 68, 68, 0.15)',
-    statusBorder: 'rgba(239, 68, 68, 0.35)',
-    daysText,
-    timeText,
-    club
+    statusBorder: 'rgba(239, 68, 68, 0.35)'
   };
+}
+
+/* ─── CLOUD SYNC FOR CLUBS CONFIGURATION ─── */
+async function syncClubsToCloud(clubs) {
+  const url = getCloudApiUrl();
+  if (!url || !Array.isArray(clubs) || clubs.length === 0) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveClubs', clubs: clubs })
+    });
+    console.log('Clubs configuration synced to cloud successfully');
+  } catch(e) {
+    console.warn('Failed to sync clubs to cloud:', e);
+  }
+}
+
+async function fetchClubsFromCloud() {
+  const url = getCloudApiUrl();
+  if (!url) return false;
+  try {
+    const fetchUrl = url + (url.includes('?') ? '&' : '?') + 'action=getClubs&t=' + Date.now();
+    const res = await fetch(fetchUrl);
+    const data = await res.json();
+    if (data && Array.isArray(data.clubs) && data.clubs.length > 0) {
+      CLUBS = data.clubs;
+      localStorage.setItem('snb_custom_clubs', JSON.stringify(CLUBS));
+      populateClubDropdowns();
+      if (!CLUBS.some(c => c.id === currentClubId)) {
+        currentClubId = CLUBS[0] ? CLUBS[0].id : 'basketball';
+        localStorage.setItem('snb_active_club', currentClubId);
+      }
+      selectClub(currentClubId);
+      renderAdminSchedulesEditor();
+      await refreshDataViews();
+      return true;
+    }
+  } catch(e) {
+    console.warn('Fetch clubs from cloud failed:', e);
+  }
+  return false;
 }
 
 function saveClubsData(clubs) {
@@ -2391,6 +2475,9 @@ function saveClubsData(clubs) {
   renderClubsFullDirectory();
   renderAdminSchedulesEditor();
   if (typeof loadAnalytics === 'function') loadAnalytics();
+
+  // Asynchronously sync to Google Sheets cloud so all devices stay identical
+  syncClubsToCloud(clubs);
 }
 
 function updateBannerClubSchedule() {
@@ -2607,6 +2694,7 @@ function updateBannerClubOccupants() {
   const bOcc = document.getElementById('banner-club-occupants');
   if (!bOcc) return;
   const club = getSelectedClub();
+  if (!club) return;
   const activeInClub = getActiveLogsForClub(club).length;
   const opStatus = getClubOperatingStatus(club.id);
 
@@ -2624,7 +2712,7 @@ function updateBannerClubOccupants() {
     bOcc.style.borderColor = 'rgba(16, 185, 129, 0.35)';
   } else if (!opStatus.isOpenToday) {
     bOcc.className = 'status-tag';
-    bOcc.innerHTML = `🔴 ปิดทำการวันนี้ (เปิด: ${opStatus.sched.days})`;
+    bOcc.innerHTML = `🔴 ปิดทำการวันนี้ (เปิด: ${opStatus.daysText})`;
     bOcc.style.background = 'rgba(239, 68, 68, 0.15)';
     bOcc.style.color = '#f87171';
     bOcc.style.borderColor = 'rgba(239, 68, 68, 0.35)';
@@ -3353,12 +3441,37 @@ async function syncFromCloud(silent = false) {
     const fetchUrl = url + (url.includes('?') ? '&' : '?') + 'action=getLogs&t=' + Date.now();
     const res = await fetch(fetchUrl);
     const data = await res.json();
+
+    let clubsUpdatedFromCloud = false;
+    // Check if cloud response contains customized club configurations
+    if (data && Array.isArray(data.clubs) && data.clubs.length > 0) {
+      const cloudClubsStr = JSON.stringify(data.clubs);
+      const localClubsStr = JSON.stringify(CLUBS);
+      if (cloudClubsStr !== localClubsStr) {
+        CLUBS = data.clubs;
+        localStorage.setItem('snb_custom_clubs', cloudClubsStr);
+        populateClubDropdowns();
+        if (!CLUBS.some(c => c.id === currentClubId)) {
+          currentClubId = CLUBS[0] ? CLUBS[0].id : 'basketball';
+          localStorage.setItem('snb_active_club', currentClubId);
+        }
+        selectClub(currentClubId);
+        renderAdminSchedulesEditor();
+        clubsUpdatedFromCloud = true;
+      }
+    } else if (localStorage.getItem('snb_custom_clubs')) {
+      // If cloud does not have clubs stored yet but this browser has custom clubs, seed cloud automatically
+      syncClubsToCloud(CLUBS);
+    }
+
     if (data && Array.isArray(data.records)) {
       await appDB.bulkUpsert(data.records);
       allLogsCache = await appDB.getAllLogs();
       activeLogsCache = allLogsCache.filter(isRecordActive);
       
-      if (!silent) toast(`ซิงก์ข้อมูลจาก Google Sheets สำเร็จ (${data.records.length} รายการ) ✓`);
+      if (!silent) {
+        toast(`ซิงก์ข้อมูลจาก Google Sheets สำเร็จ (${data.records.length} รายการ${clubsUpdatedFromCloud ? ' • ซิงก์กำหนดการชมรมแล้ว' : ''}) ✓`);
+      }
 
       if (banner) {
         banner.style.display = 'flex';
@@ -3368,7 +3481,7 @@ async function syncFromCloud(silent = false) {
       if (bannerText) {
         bannerText.innerHTML = `
           <strong style="color: #34d399;">☁️ เชื่อมต่อฐานข้อมูลกลาง (Google Sheets) สำเร็จ</strong><br>
-          <span style="color: var(--text-muted);">ซิงก์ข้อมูลแล้ว ${data.records.length} รายการ • ข้อมูลจากทุกเครื่องจะถูกรวบรวมไว้ที่นี่</span>
+          <span style="color: var(--text-muted);">ซิงก์ข้อมูลแล้ว ${data.records.length} รายการ • ข้อมูลและกำหนดการจากทุกเครื่องจะถูกรวบรวมไว้ที่นี่</span>
         `;
       }
       await refreshDataViews();
@@ -4569,7 +4682,50 @@ function saveAllClubsFromSettings() {
   });
 
   saveClubsData(CLUBS);
-  toast('บันทึกข้อมูลและกำหนดการทุกชมรมเรียบร้อย ✓');
+  toast('บันทึกข้อมูลและซิงก์กำหนดการขึ้น Google Sheets เรียบร้อย ✓');
+}
+
+async function fetchClubsFromCloudManual() {
+  toast('กำลังดึงการตั้งค่าชมรมล่าสุดจาก Google Sheets...');
+  const ok = await fetchClubsFromCloud();
+  if (ok) {
+    toast('ดึงข้อมูลและกำหนดการชมรมจาก Google Sheets สำเร็จแล้ว! ✓');
+  } else {
+    toast('ไม่พบข้อมูลกำหนดการใน Cloud หรือยังไม่ได้อัปเดตสคริปต์ใน Google Sheets', true);
+  }
+}
+
+function exportClubsJSON() {
+  const jsonStr = JSON.stringify(CLUBS, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `snb_clubs_config_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('ส่งออกไฟล์การตั้งค่าชมรม (JSON) เรียบร้อย ✓');
+}
+
+function importClubsJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (Array.isArray(data) && data.length > 0) {
+        saveClubsData(data);
+        toast(`นำเข้าการตั้งค่าชมรม ${data.length} รายการ และซิงก์ขึ้น Google Sheets สำเร็จ! ✓`);
+      } else {
+        toast('ไฟล์ JSON ไม่ถูกต้องหรือไม่พบข้อมูลชมรม', true);
+      }
+    } catch(err) {
+      toast('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 function resetClubsAndSchedulesToDefault() {
@@ -4707,7 +4863,17 @@ async function clearAllData() {
 
 /* ─── INITIALIZATION ON PAGE LOAD ─── */
 window.addEventListener('DOMContentLoaded', async () => {
-  await appDB.init();
+  try {
+    await appDB.init();
+  } catch(e) {
+    console.warn('DB init warning', e);
+  }
+
+  // Ensure currentClubId exists in CLUBS
+  if (!CLUBS.some(c => c.id === currentClubId)) {
+    currentClubId = CLUBS[0] ? CLUBS[0].id : 'basketball';
+  }
+
   populateClubDropdowns();
   initProfileDropdowns();
   startLiveClock();
@@ -4715,10 +4881,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   refreshProfileDisplay();
   await refreshDataViews();
 
-  // Auto sync latest records from Google Sheets immediately
+  // Auto sync latest records and customized club schedules from Google Sheets immediately
   await syncFromCloud(true);
 
-  // Auto poll every 20s in background to keep live occupant counts updated across all devices
+  // Auto poll every 20s in background to keep live occupant counts and club schedules updated across all devices
   setInterval(() => {
     syncFromCloud(true);
   }, 20000);
