@@ -1399,8 +1399,22 @@
     </div>
   </main>
 
-  <!-- VIEW 5: SETTINGS & DATABASE MANAGEMENT (ตั้งค่า) -->
+  <!-- VIEW 5: SETTINGS & DATABASE MANAGEMENT (เฉพาะ Admin รหัส 8888) -->
   <main id="view-settings" class="tab-view">
+    <!-- Admin Security Header Banner -->
+    <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: var(--radius-lg); padding: 12px 18px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.6rem;">🔐</span>
+        <div>
+          <div style="font-weight: 600; color: #fff; font-size: 0.95rem;">โหมดผู้ดูแลระบบ (Admin Access: 8888)</div>
+          <div style="font-size: 0.75rem; color: #93c5fd;">คุณมีสิทธิ์เข้าถึงการตั้งค่า จัดการฐานข้อมูล และลบประวัติการใช้งาน</div>
+        </div>
+      </div>
+      <button class="btn-secondary" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4); font-size: 0.8rem; padding: 6px 14px;" onclick="adminLogout()">
+        🚪 ล็อกเอาต์ Admin
+      </button>
+    </div>
+
     <div class="main-layout">
       <!-- Profile & User Preferences -->
       <div class="glass-card">
@@ -1476,10 +1490,6 @@
             <span>📥</span> นำเข้าฐานข้อมูลสำรอง (Import JSON)
             <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importDatabaseJSON(event)">
           </label>
-
-          <button class="btn-secondary" style="color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="clearAllData()">
-            <span>🗑️</span> ล้างประวัติทั้งหมดในฐานข้อมูล
-          </button>
         </div>
 
         <div style="margin-top: 20px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
@@ -1488,6 +1498,44 @@
           • มีไฟล์ <code>database_schema.sql</code> และ <code>google_sheets_apps_script.js</code> อยู่ในโฟลเดอร์โครงการสำหรับนำไปติดตั้งบนคลาวด์
         </div>
       </div>
+
+      <!-- Admin Record Management & Deletion Card (ย้ายการลบประวัติต่างๆ มาไว้ที่นี่) -->
+      <div class="glass-card" style="grid-column: 1 / -1; margin-top: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 600; color: #fff;">🗑️ จัดการและลบประวัติการใช้งาน (เฉพาะ Admin)</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              การลบข้อมูลในส่วนนี้ได้รับการคุ้มครองด้วยรหัสผ่าน Admin สามารถค้นหาและลบรายบุคคล หรือล้างประวัติทั้งหมด
+            </p>
+          </div>
+          <button class="btn-secondary" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4); font-weight: 600;" onclick="clearAllData()">
+            <span>🗑️</span> ล้างประวัติทั้งหมดในฐานข้อมูล
+          </button>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <input type="text" id="admin-search-log" class="form-input" placeholder="🔍 พิมพ์ชื่อ, สังกัด หรือรหัส เพื่อค้นหารายการที่ต้องการลบ..." oninput="renderAdminLogsList()">
+        </div>
+
+        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>วัน-เวลาเข้า</th>
+                <th>ชื่อ-นามสกุล</th>
+                <th>สังกัด</th>
+                <th>ชมรม/กิจกรรม</th>
+                <th>สถานะ</th>
+                <th style="text-align: center;">ลบประวัติ</th>
+              </tr>
+            </thead>
+            <tbody id="admin-logs-table-body">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -1541,6 +1589,46 @@
     <button class="btn-checkin-action btn-in" style="font-size: 1rem; padding: 14px; margin-top: 10px;" onclick="saveModalProfile()">
       บันทึกข้อมูลและพร้อมใช้งาน
     </button>
+  </div>
+<!-- Modal Admin PIN Verification -->
+<div class="modal-backdrop" id="modal-admin-pin">
+  <div class="modal-content" style="max-width: 380px; text-align: center;">
+    <div style="font-size: 2.8rem; margin-bottom: 8px;">🔒</div>
+    <h3 class="modal-title" style="margin-bottom: 4px; font-size: 1.25rem;">รหัสผ่านผู้ดูแลระบบ (Admin)</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+      เข้าสู่เมนูตั้งค่าและจัดการลบประวัติการใช้งาน
+    </p>
+
+    <div class="form-group">
+      <input type="password" id="admin-pin-input" class="form-input" maxlength="10" placeholder="••••" autocomplete="off"
+             style="font-size: 2rem; text-align: center; letter-spacing: 0.35em; font-weight: 700; height: 56px;"
+             onkeydown="if(event.key==='Enter') verifyAdminPin()">
+    </div>
+
+    <!-- Quick Numeric Keypad for Touch / Mobile Convenience -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px;">
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('1')">1</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('2')">2</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('3')">3</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('4')">4</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('5')">5</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('6')">6</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('7')">7</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('8')">8</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('9')">9</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 0.95rem; font-weight: 600; justify-content: center; color: #f87171;" onclick="clearAdminPin()">C</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.25rem; font-weight: 600; justify-content: center;" onclick="appendAdminPin('0')">0</button>
+      <button type="button" class="btn-secondary" style="height: 48px; font-size: 1.1rem; justify-content: center;" onclick="backspaceAdminPin()">⌫</button>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="btn-secondary" style="flex: 1; justify-content: center;" onclick="closeAdminPinModal()">
+        ยกเลิก
+      </button>
+      <button type="button" class="btn-checkin-action btn-in" style="flex: 2; padding: 12px; font-size: 1rem;" onclick="verifyAdminPin()">
+        🔓 ยืนยันรหัส
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1847,8 +1935,94 @@ function toast(msg, isError = false) {
   setTimeout(() => el.className = '', 2800);
 }
 
+/* ─── ADMIN AUTHENTICATION (PIN: 8888) ─── */
+const ADMIN_PIN = '8888';
+let pendingAdminSuccessAction = null;
+
+function isAdminAuthenticated() {
+  return sessionStorage.getItem('snb_admin_authenticated') === 'true';
+}
+
+function openAdminPinModal(callback) {
+  pendingAdminSuccessAction = callback;
+  const modal = document.getElementById('modal-admin-pin');
+  const input = document.getElementById('admin-pin-input');
+  if (input) input.value = '';
+  if (modal) modal.classList.add('show');
+  setTimeout(() => { if (input) input.focus(); }, 120);
+}
+
+function closeAdminPinModal() {
+  const modal = document.getElementById('modal-admin-pin');
+  if (modal) modal.classList.remove('show');
+  pendingAdminSuccessAction = null;
+}
+
+function appendAdminPin(digit) {
+  const input = document.getElementById('admin-pin-input');
+  if (!input) return;
+  if (input.value.length < 8) {
+    input.value += digit;
+  }
+}
+
+function clearAdminPin() {
+  const input = document.getElementById('admin-pin-input');
+  if (input) input.value = '';
+}
+
+function backspaceAdminPin() {
+  const input = document.getElementById('admin-pin-input');
+  if (!input) return;
+  input.value = input.value.slice(0, -1);
+}
+
+function verifyAdminPin() {
+  const input = document.getElementById('admin-pin-input');
+  const entered = (input?.value || '').trim();
+
+  if (entered === ADMIN_PIN) {
+    sessionStorage.setItem('snb_admin_authenticated', 'true');
+    closeAdminPinModal();
+    toast('เข้าสู่ระบบ Admin สำเร็จ ✓');
+    if (typeof pendingAdminSuccessAction === 'function') {
+      const act = pendingAdminSuccessAction;
+      pendingAdminSuccessAction = null;
+      act();
+    } else {
+      executeSwitchMainTab('settings');
+    }
+  } else {
+    toast('รหัสผ่าน Admin ไม่ถูกต้อง (ต้องเป็น 8888)', true);
+    if (input) {
+      input.style.borderColor = '#ef4444';
+      input.value = '';
+      input.focus();
+      setTimeout(() => { input.style.borderColor = ''; }, 1200);
+    }
+  }
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('snb_admin_authenticated');
+  toast('ออกจากระบบผู้ดูแลระบบเรียบร้อย');
+  executeSwitchMainTab('checkin');
+}
+
 /* ─── UI NAVIGATION ─── */
 function switchMainTab(tabId) {
+  if (tabId === 'settings') {
+    if (!isAdminAuthenticated()) {
+      openAdminPinModal(() => {
+        executeSwitchMainTab('settings');
+      });
+      return;
+    }
+  }
+  executeSwitchMainTab(tabId);
+}
+
+function executeSwitchMainTab(tabId) {
   // Update desktop nav
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -1873,6 +2047,7 @@ function switchMainTab(tabId) {
     loadAnalytics();
   } else if (tabId === 'settings') {
     loadSettingsInputs();
+    renderAdminLogsList();
   }
 }
 
@@ -2647,30 +2822,78 @@ function renderHistoryTableRows() {
           ${log.note || '-'}
         </td>
         <td style="text-align: center;">
-          <div style="display: inline-flex; gap: 4px;">
-            ${log.status === 'active' ? `
-              <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #34d399;" onclick="forceCheckOutLog('${log.id}')">
-                เช็คเอาต์
-              </button>
-            ` : ''}
-            <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #ef4444;" onclick="deleteRecord('${log.id}')" title="ลบรายการ">
-              ลบ
+          ${log.status === 'active' ? `
+            <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #34d399;" onclick="forceCheckOutLog('${log.id}')">
+              เช็คเอาต์
             </button>
-          </div>
+          ` : '<span style="color:var(--text-dim);font-size:0.75rem;">-</span>'}
         </td>
       </tr>
     `;
   }).join('');
 }
 
-async function deleteRecord(id) {
-  if (confirm('ยืนยันลบรายการบันทึกนี้?')) {
+function renderAdminLogsList() {
+  const tbody = document.getElementById('admin-logs-table-body');
+  if (!tbody) return;
+
+  const search = (document.getElementById('admin-search-log')?.value || '').toLowerCase().trim();
+  const logs = allLogsCache.filter(l => {
+    if (!search) return true;
+    return `${l.userName} ${l.department} ${l.id} ${l.clubName} ${l.note || ''}`.toLowerCase().includes(search);
+  });
+
+  if (logs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 30px;">
+          ไม่พบรายการประวัติ
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(log => {
+    const entryDate = new Date(log.checkInTime);
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 500;">${formatThaiDate(entryDate)}</div>
+          <small style="color:var(--text-muted);">${formatThaiTime(entryDate)}</small>
+        </td>
+        <td>
+          <strong>${log.userName}</strong><br>
+          <small style="color:var(--text-dim);">${log.id}</small>
+        </td>
+        <td>${log.department}</td>
+        <td>${log.clubName}</td>
+        <td>
+          <span class="status-tag ${log.status === 'active' ? 'status-active' : 'status-completed'}">
+            ${log.status === 'active' ? '🟢 กำลังใช้งาน' : '⚪ เสร็จสิ้น'}
+          </span>
+        </td>
+        <td style="text-align: center;">
+          <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.72rem; color: #f87171; border-color: rgba(239, 68, 68, 0.4);" onclick="adminDeleteRecord('${log.id}')">
+            🗑️ ลบ
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function adminDeleteRecord(id) {
+  if (confirm('ยืนยันลบรายการบันทึกนี้ออกจากฐานข้อมูล?')) {
     await appDB.deleteLog(id);
     toast('ลบรายการเรียบร้อย');
-    refreshDataViews();
-    loadHistoryTable();
+    await refreshDataViews();
+    renderAdminLogsList();
+    if (typeof loadHistoryTable === 'function') loadHistoryTable();
   }
 }
+
+const deleteRecord = adminDeleteRecord;
 
 /* ─── EXPORT TO EXCEL (.XLSX) VIA SHEETJS ─── */
 function exportToExcel() {
@@ -3007,7 +3230,8 @@ async function clearAllData() {
     await appDB.clearAll();
     clearSession();
     toast('ล้างฐานข้อมูลเรียบร้อย');
-    refreshDataViews();
+    await refreshDataViews();
+    renderAdminLogsList();
     loadHistoryTable();
   }
 }
