@@ -2968,8 +2968,32 @@ function setUserProfile(p) {
 
 function getCurrentSession() {
   const s = localStorage.getItem('session');
-  if (!s) return null;
-  try { return JSON.parse(s); } catch(e) { return null; }
+  if (s) {
+    try {
+      const parsed = JSON.parse(s);
+      if (parsed) {
+        if (Array.isArray(allLogsCache)) {
+          const cached = allLogsCache.find(l => l.id === parsed.id);
+          if (cached && !isRecordActive(cached)) {
+            clearSession();
+            return null;
+          }
+        }
+        if (isRecordActive(parsed)) return parsed;
+      }
+    } catch(e) {}
+  }
+
+  // Cross-device fallback: If localStorage has no active session, check if activeLogsCache has an active record for current user profile
+  const profile = getUserProfile();
+  if (profile && profile.name && Array.isArray(activeLogsCache)) {
+    const active = activeLogsCache.find(l => l.userName === profile.name && isRecordActive(l));
+    if (active) {
+      setSession(active);
+      return active;
+    }
+  }
+  return null;
 }
 
 function setSession(s) {
@@ -3526,6 +3550,20 @@ async function doCheckIn() {
   };
 
   try {
+    // 0. Auto-close any lingering stale active sessions for this user from days ago
+    if (Array.isArray(activeLogsCache)) {
+      const staleLogs = activeLogsCache.filter(l => l.userName === profile.name && isRecordActive(l));
+      for (const stale of staleLogs) {
+        stale.checkOutTime = stale.checkInTime || now.toISOString();
+        stale.durationMinutes = 0;
+        stale.status = 'completed';
+        const forgotTag = '(ลืมลงเวลาออก)';
+        stale.note = stale.note ? (stale.note.includes(forgotTag) ? stale.note : `${stale.note} ${forgotTag}`) : 'ลืมลงเวลาออก';
+        await appDB.updateLog(stale);
+        syncRecordToCloud(stale, 'checkOut');
+      }
+    }
+
     // 1. Save to Database
     await appDB.addLog(newRecord);
 
@@ -3561,10 +3599,25 @@ async function doCheckOut() {
 
   const exitTime = new Date();
   const entryTime = new Date(session.checkInTime);
-  const durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
+  let durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
 
-  session.checkOutTime = exitTime.toISOString();
-  session.durationMinutes = durationMinutes;
+  // If session is older than 16 hours (e.g. forgotten from yesterday or days ago)
+  if ((exitTime - entryTime) > 16 * 3600 * 1000) {
+    if (confirm('ระบบตรวจพบว่าการเข้าใช้งานนี้ผ่านมาเกิน 16 ชั่วโมงแล้ว (ลืมลงเวลาออก)\nต้องการบันทึกเวลาออกเท่ากับเวลาเข้า (0 นาที) หรือไม่?\n\n- กด "ตกลง" เพื่อบันทึกเวลาออกเท่ากับเวลาเข้า (0 นาที)\n- กด "ยกเลิก" เพื่อบันทึกเวลาออก ณ ขณะนี้ (' + Math.floor(durationMinutes / 60) + ' ชม.)')) {
+      session.checkOutTime = session.checkInTime || exitTime.toISOString();
+      session.durationMinutes = 0;
+      const forgotTag = '(ลืมลงเวลาออก)';
+      session.note = session.note ? (session.note.includes(forgotTag) ? session.note : `${session.note} ${forgotTag}`) : 'ลืมลงเวลาออก';
+      durationMinutes = 0;
+    } else {
+      session.checkOutTime = exitTime.toISOString();
+      session.durationMinutes = durationMinutes;
+    }
+  } else {
+    session.checkOutTime = exitTime.toISOString();
+    session.durationMinutes = durationMinutes;
+  }
+
   session.status = 'completed';
 
   try {
@@ -3574,19 +3627,25 @@ async function doCheckOut() {
     // 2. Clear Session
     clearSession();
 
-    // 3. Mobile haptic feedback
+    // 3. Update local caches immediately
+    const idx = allLogsCache.findIndex(l => l.id === session.id);
+    if (idx !== -1) allLogsCache[idx] = { ...session };
+    activeLogsCache = allLogsCache.filter(isRecordActive);
+
+    // 4. Mobile haptic feedback
     if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
 
-    // 4. Cloud Sync
+    // 5. Cloud Sync
     syncRecordToCloud(session, 'checkOut');
 
-    // 5. Optional Legacy Google Form submission if basketball
+    // 6. Optional Legacy Google Form submission if basketball
     if (session.clubId === 'basketball') {
       submitToLegacyGoogleForm(session, entryTime, exitTime);
     }
 
     toast(`ลงทะเบียนออกเรียบร้อย (ใช้งานไป ${durationMinutes} นาที) ✓`);
     refreshDataViews();
+    if (typeof loadHistoryTable === 'function') loadHistoryTable();
   } catch(err) {
     console.error('Check-out error', err);
     toast('ไม่สามารถบันทึกได้ ลองใหม่อีกครั้ง', true);
@@ -3597,17 +3656,77 @@ async function doCheckOut() {
   }
 }
 
-function cancelSessionPrompt() {
-  if (confirm('คุณต้องการยกเลิกการลงทะเบียนครั้งนี้หรือไม่? (ข้อมูลจะไม่ถูกนับเป็นประวัติสมบูรณ์)')) {
-    const session = getCurrentSession();
-    if (session) {
-      session.status = 'cancelled';
-      appDB.updateLog(session);
-    }
-    clearSession();
-    toast('ยกเลิกรายการเรียบร้อย');
-    refreshDataViews();
+async function cancelSessionPrompt() {
+  if (!confirm('คุณต้องการลงชื่อออกจากการใช้งานครั้งนี้หรือไม่?\n(ระบบจะดำเนินการลงชื่อออก ณ เวลาเดียวกับตอนลงทะเบียนเข้าใช้งาน เพื่อปิดรอบการใช้งานที่ค้างอยู่)')) {
+    return;
   }
+
+  let session = getCurrentSession();
+  const profile = getUserProfile();
+
+  if (!session && profile && profile.name && Array.isArray(activeLogsCache)) {
+    session = activeLogsCache.find(l => l.userName === profile.name && isRecordActive(l));
+  }
+
+  if (session) {
+    const entryIso = session.checkInTime || new Date().toISOString();
+    session.checkOutTime = entryIso;
+    session.durationMinutes = 0;
+    session.status = 'completed';
+
+    const forgotTag = '(ลืมลงเวลาออก)';
+    if (!session.note || session.note.trim() === '') {
+      session.note = 'ลืมลงเวลาออก';
+    } else if (!session.note.includes(forgotTag)) {
+      session.note = `${session.note} ${forgotTag}`;
+    }
+
+    try {
+      await appDB.updateLog(session);
+    } catch(e) {
+      console.warn('DB update warning in cancelSessionPrompt:', e);
+    }
+
+    // Sync checkout to Google Sheets cloud so it is marked completed on cloud too
+    try {
+      await syncRecordToCloud(session, 'checkOut');
+    } catch(e) {
+      console.warn('Cloud sync error in cancelSessionPrompt:', e);
+    }
+
+    // Update in-memory caches immediately
+    const idx = allLogsCache.findIndex(l => l.id === session.id);
+    if (idx !== -1) {
+      allLogsCache[idx] = { ...session };
+    } else {
+      allLogsCache.unshift({ ...session });
+    }
+
+    // Also close any other stale active records for this user in local cache and cloud
+    if (session.userName) {
+      const otherStale = activeLogsCache.filter(l => l.userName === session.userName && l.id !== session.id && isRecordActive(l));
+      for (const stale of otherStale) {
+        stale.checkOutTime = stale.checkInTime || entryIso;
+        stale.durationMinutes = 0;
+        stale.status = 'completed';
+        stale.note = stale.note ? (stale.note.includes(forgotTag) ? stale.note : `${stale.note} ${forgotTag}`) : 'ลืมลงเวลาออก';
+        try {
+          await appDB.updateLog(stale);
+          syncRecordToCloud(stale, 'checkOut');
+        } catch(e) {}
+        const sIdx = allLogsCache.findIndex(l => l.id === stale.id);
+        if (sIdx !== -1) allLogsCache[sIdx] = { ...stale };
+      }
+    }
+
+    activeLogsCache = allLogsCache.filter(isRecordActive);
+  }
+
+  clearSession();
+  toast('ลงชื่อออกเรียบร้อย (บันทึกเวลาออกเท่ากับเวลาเข้า) ✓');
+  await refreshDataViews();
+  if (typeof loadHistoryTable === 'function') loadHistoryTable();
+  if (typeof applyHistoryFilters === 'function') applyHistoryFilters();
 }
 
 /* ─── LEGACY GOOGLE FORM INTEGRATION ─── */
@@ -4029,8 +4148,18 @@ async function forceCheckOutLog(id) {
     if (log) {
       const exitTime = new Date();
       const entryTime = new Date(log.checkInTime);
-      log.checkOutTime = exitTime.toISOString();
-      log.durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
+      const isOverdue = (exitTime - entryTime) > 12 * 3600 * 1000;
+
+      if (isOverdue) {
+        log.checkOutTime = log.checkInTime || exitTime.toISOString();
+        log.durationMinutes = 0;
+        const forgotTag = '(ลืมลงเวลาออก)';
+        log.note = log.note ? (log.note.includes(forgotTag) ? log.note : `${log.note} ${forgotTag}`) : 'ลืมลงเวลาออก';
+      } else {
+        log.checkOutTime = exitTime.toISOString();
+        log.durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
+      }
+
       log.status = 'completed';
       await appDB.updateLog(log);
 
@@ -4041,7 +4170,10 @@ async function forceCheckOutLog(id) {
       // Cloud sync checkout to Google Sheets
       syncRecordToCloud(log, 'checkOut');
 
-      toast('บันทึกการออกเรียบร้อย');
+      // Update local in-memory caches immediately
+      activeLogsCache = allLogsCache.filter(isRecordActive);
+
+      toast('บันทึกการออกเรียบร้อย' + (isOverdue ? ' (ปิดรอบเวลาเดียวกับเวลาเข้า)' : ''));
       await refreshDataViews();
       loadHistoryTable();
     }
