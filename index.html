@@ -644,6 +644,59 @@
     box-shadow: 0 8px 30px rgba(16, 185, 129, 0.55);
   }
 
+  .btn-checkin-action.btn-checkin-split {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 13px 16px;
+    line-height: 1.3;
+    text-align: center;
+  }
+  .checkin-btn-sub {
+    font-size: 0.86rem;
+    font-weight: 600;
+    opacity: 0.95;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.02em;
+    color: #e6fffa;
+  }
+  .checkin-btn-main {
+    font-size: 1.24rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.01em;
+    color: #ffffff;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .checkin-btn-icon {
+    font-size: 1.35rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+  .checkin-dot-pulse {
+    width: 7px;
+    height: 7px;
+    background-color: #a7f3d0;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #6ee7b7;
+    animation: checkinPulse 2s infinite ease-in-out;
+  }
+  @keyframes checkinPulse {
+    0%, 100% { opacity: 0.8; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
   .btn-out {
     background: linear-gradient(135deg, #ef4444, #dc2626);
     color: #ffffff;
@@ -1376,10 +1429,60 @@
     border-radius: var(--radius-xl);
     width: 100%;
     max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
     padding: 24px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     transform: scale(0.95);
     transition: transform 0.25s ease;
+  }
+
+  .avatar-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .avatar-option-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 6px 2px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.15s ease;
+  }
+  .avatar-option-btn span:first-child {
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+  .avatar-option-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+  .avatar-option-btn.selected {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    transform: scale(1.05);
+  }
+  .avatar-option-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1;
+  }
+  .avatar-option-btn.selected .avatar-option-label {
+    color: #93c5fd;
+    font-weight: 600;
   }
 
   .modal-backdrop.show .modal-content {
@@ -2131,6 +2234,25 @@
       <label class="form-label">รหัสพนักงาน (ถ้ามี)</label>
       <input type="text" id="modal-input-empid" class="form-input" placeholder="เช่น 650123">
     </div>
+
+    <!-- Avatar Icon Selector -->
+    <div class="form-group">
+      <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>🎨 รูปไอคอนประจำตัว (Avatar)</span>
+        <span style="font-size: 0.72rem; color: #60a5fa;">เลือกไอคอนแทนตัวอักษร</span>
+      </label>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.08);">
+        <div id="modal-avatar-preview" class="user-avatar-circle" style="width: 44px; height: 44px; font-size: 1.5rem; flex-shrink: 0;">👤</div>
+        <div>
+          <div style="font-size: 0.88rem; font-weight: 600; color: #fff;" id="modal-avatar-title">ผู้ใช้งานทั่วไป</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">จะแสดงในหน้ารายชื่อและประวัติการเข้าใช้งาน</div>
+        </div>
+      </div>
+      <div class="avatar-picker-grid" id="avatar-picker-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
     <button class="btn-checkin-action btn-in" style="font-size: 1rem; padding: 14px; margin-top: 10px;" onclick="saveModalProfile()">
       บันทึกข้อมูลและพร้อมใช้งาน
     </button>
@@ -3407,6 +3529,114 @@ function initProfileDropdowns() {
   if (setDept) setDept.innerHTML = optionsHtml;
 }
 
+const AVATAR_OPTIONS = [
+  { icon: '👤', name: 'ทั่วไป' },
+  { icon: '🧑‍💼', name: 'เจ้าหน้าที่' },
+  { icon: '🏃', name: 'นักวิ่ง' },
+  { icon: '🏸', name: 'แบดมินตัน' },
+  { icon: '🏀', name: 'บาสเกตบอล' },
+  { icon: '🏓', name: 'ปิงปอง' },
+  { icon: '🎾', name: 'เทนนิส' },
+  { icon: '🏋️', name: 'ฟิตเนส' },
+  { icon: '🧘', name: 'โยคะ' },
+  { icon: '🏊', name: 'ว่ายน้ำ' },
+  { icon: '🚴', name: 'จักรยาน' },
+  { icon: '🥊', name: 'มวย' },
+  { icon: '⚡', name: 'สายฟ้า' },
+  { icon: '⭐', name: 'ดาวเด่น' },
+  { icon: '🔥', name: 'ไฟแรง' },
+  { icon: '🦁', name: 'สิงโต' },
+  { icon: '🐯', name: 'เสือ' },
+  { icon: '🦊', name: 'จิ้งจอก' },
+  { icon: '🐼', name: 'แพนด้า' },
+  { icon: '🦅', name: 'อินทรี' }
+];
+
+let currentSelectedAvatar = '👤';
+
+function getUserAvatarRegistry() {
+  try {
+    return JSON.parse(localStorage.getItem('snb_user_avatars') || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveUserAvatarToRegistry(userName, avatar) {
+  if (!userName || !avatar) return;
+  try {
+    const reg = getUserAvatarRegistry();
+    reg[userName.trim()] = avatar;
+    localStorage.setItem('snb_user_avatars', JSON.stringify(reg));
+  } catch(e) {}
+}
+
+const DEFAULT_AVATAR_POOL = ['👤', '🏃', '🏸', '🏀', '🏓', '🎾', '🏋️', '🧘', '⚡', '⭐', '🦁', '🦊'];
+
+function getUserAvatar(logOrName) {
+  if (typeof logOrName === 'object' && logOrName) {
+    if (logOrName.avatar && String(logOrName.avatar).trim()) return logOrName.avatar;
+    logOrName = logOrName.userName || logOrName.name;
+  }
+  const name = String(logOrName || '').trim();
+  if (!name) return '👤';
+
+  const profile = getUserProfile();
+  if (profile && profile.name === name && profile.avatar) {
+    return profile.avatar;
+  }
+
+  const reg = getUserAvatarRegistry();
+  if (reg[name]) return reg[name];
+
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) % DEFAULT_AVATAR_POOL.length;
+  }
+  return DEFAULT_AVATAR_POOL[Math.abs(hash)];
+}
+
+function renderAvatarPicker(selected) {
+  currentSelectedAvatar = selected || '👤';
+  const container = document.getElementById('avatar-picker-container');
+  if (!container) return;
+
+  container.innerHTML = AVATAR_OPTIONS.map(opt => {
+    const isSelected = opt.icon === currentSelectedAvatar;
+    return `
+      <button type="button" class="avatar-option-btn ${isSelected ? 'selected' : ''}" 
+              onclick="selectAvatarOption('${opt.icon}', '${opt.name}')" 
+              title="${opt.name}">
+        <span>${opt.icon}</span>
+        <span class="avatar-option-label">${opt.name}</span>
+      </button>
+    `;
+  }).join('');
+
+  updateAvatarModalPreview(currentSelectedAvatar);
+}
+
+function selectAvatarOption(icon, name) {
+  currentSelectedAvatar = icon;
+  document.querySelectorAll('.avatar-option-btn').forEach(btn => {
+    const iconSpan = btn.querySelector('span:first-child');
+    if (iconSpan && iconSpan.textContent.trim() === icon) {
+      btn.classList.add('selected');
+    } else {
+      btn.classList.remove('selected');
+    }
+  });
+  updateAvatarModalPreview(icon, name);
+}
+
+function updateAvatarModalPreview(icon, name) {
+  const preview = document.getElementById('modal-avatar-preview');
+  if (preview) preview.textContent = icon;
+  const title = document.getElementById('modal-avatar-title');
+  if (title) {
+    const found = AVATAR_OPTIONS.find(o => o.icon === icon);
+    title.textContent = name || (found ? found.name : 'ไอคอนที่เลือก');
+  }
+}
+
 function refreshProfileDisplay() {
   const profile = getUserProfile();
   const nameEl = document.getElementById('display-user-name');
@@ -3416,11 +3646,11 @@ function refreshProfileDisplay() {
   if (profile && profile.name) {
     if (nameEl) nameEl.textContent = profile.name;
     if (deptEl) deptEl.textContent = `สังกัด: ${profile.dept || 'ทั่วไป'}`;
-    if (avatarEl) avatarEl.textContent = profile.name.trim().charAt(0) || '👤';
+    if (avatarEl) avatarEl.textContent = getUserAvatar(profile);
   } else {
     if (nameEl) nameEl.textContent = 'กรุณาตั้งค่าชื่อผู้ใช้';
     if (deptEl) deptEl.textContent = 'กดแก้ไขเพื่อกรอกชื่อและสังกัด';
-    if (avatarEl) avatarEl.textContent = '?';
+    if (avatarEl) avatarEl.textContent = '👤';
   }
 }
 
@@ -3429,6 +3659,9 @@ function openProfileModal() {
   document.getElementById('modal-input-name').value = profile.name || '';
   if (profile.dept) document.getElementById('modal-select-dept').value = profile.dept;
   document.getElementById('modal-input-empid').value = profile.empId || '';
+
+  renderAvatarPicker(profile.avatar || '👤');
+
   document.getElementById('modal-profile').classList.add('show');
   setTimeout(() => document.getElementById('modal-input-name').focus(), 100);
 }
@@ -3441,17 +3674,22 @@ function saveModalProfile() {
   const name = document.getElementById('modal-input-name').value.trim();
   const dept = document.getElementById('modal-select-dept').value;
   const empId = document.getElementById('modal-input-empid').value.trim();
+  const avatar = currentSelectedAvatar || '👤';
 
   if (!name) {
     toast('กรุณากรอกชื่อ-นามสกุลก่อนบันทึก', true);
     return;
   }
 
-  const profile = { name, dept, empId };
+  const profile = { name, dept, empId, avatar };
   setUserProfile(profile);
+  saveUserAvatarToRegistry(name, avatar);
+
   closeProfileModal();
   refreshProfileDisplay();
   renderCheckInArea();
+  refreshDataViews();
+  if (typeof loadHistoryTable === 'function') loadHistoryTable();
   toast('บันทึกข้อมูลเรียบร้อย ✓');
 }
 
@@ -3506,8 +3744,14 @@ function renderCheckInArea() {
     if (noteBox) noteBox.style.display = 'block';
     const club = getSelectedClub();
     area.innerHTML = `
-      <button class="btn-checkin-action btn-in" onclick="doCheckIn()">
-        <span>${club.icon}</span> ลงทะเบียนเข้าใช้งาน ${club.name}
+      <button class="btn-checkin-action btn-in btn-checkin-split" onclick="doCheckIn()">
+        <span class="checkin-btn-sub">
+          <span class="checkin-dot-pulse"></span> ลงทะเบียนเข้าใช้งาน
+        </span>
+        <span class="checkin-btn-main">
+          <span class="checkin-btn-icon">${club.icon}</span>
+          <span class="checkin-btn-name">${club.name}</span>
+        </span>
       </button>
     `;
   }
@@ -3532,10 +3776,15 @@ async function doCheckIn() {
   const note = (document.getElementById('checkin-note')?.value || '').trim();
   const now = new Date();
   const recordId = generateRecordId();
+  const userAvatar = profile.avatar || '👤';
+
+  // Ensure user avatar is saved in registry
+  saveUserAvatarToRegistry(profile.name, userAvatar);
 
   const newRecord = {
     id: recordId,
     userName: profile.name,
+    avatar: userAvatar,
     department: profile.dept || 'ทั่วไป',
     empId: profile.empId || '',
     clubId: club.id,
@@ -3985,9 +4234,10 @@ function renderClubsFullDirectory() {
               const inTime = log.checkInTime ? formatThaiTime(new Date(log.checkInTime)) : '';
               return `
                 <div style="font-size: 0.8rem; color: #fff; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <strong>• ${log.userName}</strong> 
-                    <span style="color: var(--text-dim); font-size: 0.72rem;">(${log.department})</span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>${getUserAvatar(log)}</span>
+                    <strong>${escapeHtml(log.userName)}</strong> 
+                    <span style="color: var(--text-dim); font-size: 0.72rem;">(${escapeHtml(log.department)})</span>
                   </div>
                   <span style="color: var(--text-muted); font-size: 0.72rem;">เข้า ${inTime}</span>
                 </div>
@@ -4124,14 +4374,17 @@ function renderActiveMembersList() {
     const club = CLUBS.find(c => c.id === log.clubId || c.name === log.clubName) || { icon: '🏢', name: log.clubName || 'อาคารทั่วไป' };
     const checkInTime = log.checkInTime ? new Date(log.checkInTime) : new Date();
     return `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px;">
-        <div>
-          <div style="font-weight: 600; font-size: 0.88rem; color: #fff;">${log.userName}</div>
-          <div style="font-size: 0.72rem; color: var(--text-muted);">${log.department} • เข้าเมื่อ ${formatThaiTime(checkInTime)}</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="history-avatar-circle" style="width: 34px; height: 34px; font-size: 1.15rem; background: linear-gradient(135deg, #0ea5e9, #2563eb);">${getUserAvatar(log)}</div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.88rem; color: #fff;">${escapeHtml(log.userName)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(log.department)} • เข้าเมื่อ ${formatThaiTime(checkInTime)}</div>
+          </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span class="badge-club-tag" style="background: rgba(255,255,255,0.08); color: #fff;">
-            ${club.icon} ${club.name}
+            ${club.icon} ${escapeHtml(club.name)}
           </span>
           <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.7rem; color: #f87171;" onclick="forceCheckOutLog('${log.id}')" title="เช็คเอาต์แทน">
             ออก
@@ -4336,7 +4589,7 @@ function renderHistoryTableRows() {
           <td>${durationText}</td>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <div class="history-avatar-circle" style="width: 28px; height: 28px; font-size: 0.75rem;">${escapeHtml(initial)}</div>
+              <div class="history-avatar-circle" style="width: 28px; height: 28px; font-size: 0.95rem;">${getUserAvatar(log)}</div>
               <div>
                 <div style="font-weight: 600; color: #fff;">${escapeHtml(log.userName)}</div>
                 <div style="font-size: 0.7rem; color: var(--text-dim); font-family: monospace;">#${escapeHtml(log.id)}</div>
@@ -4385,13 +4638,11 @@ function renderHistoryTableRows() {
         durationText = '<span style="color:#34d399; font-weight:600;">กำลังใช้งาน</span>';
       }
 
-      const initial = (log.userName || '?').trim().charAt(0);
-
       return `
         <div class="history-card-item">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <div class="history-avatar-circle">${escapeHtml(initial)}</div>
+              <div class="history-avatar-circle" style="font-size: 1.25rem;">${getUserAvatar(log)}</div>
               <div>
                 <div style="font-weight: 600; color: #fff; font-size: 0.95rem;">${escapeHtml(log.userName)}</div>
                 <div style="font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(log.department)}</div>
@@ -4475,8 +4726,8 @@ function renderAdminLogsList() {
           <small style="color:var(--text-muted);">${formatThaiTime(entryDate)}</small>
         </td>
         <td>
-          <strong>${log.userName}</strong><br>
-          <small style="color:var(--text-dim);">${log.id}</small>
+          <strong>${getUserAvatar(log)} ${escapeHtml(log.userName)}</strong><br>
+          <small style="color:var(--text-dim);">${escapeHtml(log.id)}</small>
         </td>
         <td>${log.department}</td>
         <td>${log.clubName}</td>
@@ -4617,7 +4868,7 @@ function exportToPDF() {
         </td>
         <td style="text-align: center;">${durationText}</td>
         <td>
-          <div style="font-weight: 600; color: #0f172a;">${escapeHtml(log.userName)}</div>
+          <div style="font-weight: 600; color: #0f172a;">${getUserAvatar(log)} ${escapeHtml(log.userName)}</div>
           <div style="font-size: 7.5pt; color: #64748b;">#${escapeHtml(log.id)}</div>
         </td>
         <td>${escapeHtml(log.department)}</td>
