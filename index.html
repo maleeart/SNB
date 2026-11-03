@@ -4325,11 +4325,11 @@ function renderHistoryTableRows() {
         <tr>
           <td>
             <div style="font-weight: 600; color: #fff;">${formatThaiDate(entryDate)}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">${formatThaiTime(entryDate)} น.</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${formatThaiTime(entryDate)}</div>
           </td>
           <td>
             ${exitDate ? `
-              <div style="font-weight: 500;">${formatThaiTime(exitDate)} น.</div>
+              <div style="font-weight: 500;">${formatThaiTime(exitDate)}</div>
               <div style="font-size: 0.72rem; color: var(--text-muted);">${formatThaiDate(exitDate)}</div>
             ` : '<span style="color: #60a5fa; font-weight: 500;">ยังไม่ออก</span>'}
           </td>
@@ -4415,11 +4415,11 @@ function renderHistoryTableRows() {
             </div>
             <div>
               <span style="color: var(--text-dim); font-size: 0.72rem; display: block;">📅 เวลาเข้า</span>
-              <div style="font-weight: 500; margin-top: 2px;">${formatThaiTime(entryDate)} น. <small style="color: var(--text-dim);">(${formatThaiDate(entryDate)})</small></div>
+              <div style="font-weight: 500; margin-top: 2px;">${formatThaiTime(entryDate)} <small style="color: var(--text-dim);">(${formatThaiDate(entryDate)})</small></div>
             </div>
             <div>
               <span style="color: var(--text-dim); font-size: 0.72rem; display: block;">🚪 เวลาออก</span>
-              <div style="font-weight: 500; margin-top: 2px;">${exitDate ? `${formatThaiTime(exitDate)} น. <small style="color: var(--text-dim);">(${formatThaiDate(exitDate)})</small>` : '<span style="color: #60a5fa; font-weight: 500;">ยังไม่ออก</span>'}</div>
+              <div style="font-weight: 500; margin-top: 2px;">${exitDate ? `${formatThaiTime(exitDate)} <small style="color: var(--text-dim);">(${formatThaiDate(exitDate)})</small>` : '<span style="color: #60a5fa; font-weight: 500;">ยังไม่ออก</span>'}</div>
             </div>
           </div>
 
@@ -4574,7 +4574,7 @@ function exportToPDF() {
 
   const now = new Date();
   const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-  const thaiPrintDate = `${formatThaiDate(now)} เวลา ${formatThaiTime(now)} น.`;
+  const thaiPrintDate = `${formatThaiDate(now)} เวลา ${formatThaiTime(now)}`;
 
   // Get current filter labels for report header
   const clubFilterEl = document.getElementById('filter-club');
@@ -4607,11 +4607,11 @@ function exportToPDF() {
         <td style="text-align: center; font-weight: 500;">${index + 1}</td>
         <td>
           <div style="font-weight: 600;">${formatThaiDate(entryDate)}</div>
-          <div style="font-size: 8pt; color: #64748b;">${formatThaiTime(entryDate)} น.</div>
+          <div style="font-size: 8pt; color: #64748b;">${formatThaiTime(entryDate)}</div>
         </td>
         <td>
           ${exitDate ? `
-            <div style="font-weight: 500;">${formatThaiTime(exitDate)} น.</div>
+            <div style="font-weight: 500;">${formatThaiTime(exitDate)}</div>
             <div style="font-size: 8pt; color: #64748b;">${formatThaiDate(exitDate)}</div>
           ` : '<span style="color: #0284c7; font-weight: 600;">ยังไม่ออก</span>'}
         </td>
