@@ -865,38 +865,62 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .btn-export-excel {
     background: linear-gradient(135deg, #107c41, #15803d);
     color: #fff;
     border: none;
-    padding: 10px 16px;
+    padding: 8px 15px;
     border-radius: var(--radius-md);
     cursor: pointer;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .btn-export-excel:hover {
     filter: brightness(1.1);
     box-shadow: 0 6px 18px rgba(22, 163, 74, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-export-pdf {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-export-pdf:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45);
+    transform: translateY(-1px);
   }
 
   .btn-export-csv {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #fff;
-    padding: 10px 14px;
+    padding: 8px 13px;
     border-radius: var(--radius-md);
     cursor: pointer;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -906,40 +930,116 @@
     background: rgba(255, 255, 255, 0.15);
   }
 
-  /* Table styling */
+  /* Table styling - Beautiful, High-contrast, Professional */
   .table-responsive {
     width: 100%;
     overflow-x: auto;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
-    background: rgba(10, 15, 29, 0.5);
+    background: rgba(10, 15, 29, 0.65);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
   }
 
   table.data-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.84rem;
     text-align: left;
   }
 
   table.data-table th {
-    background: rgba(15, 23, 42, 0.95);
-    color: var(--text-muted);
+    background: linear-gradient(180deg, #1e293b, #0f172a);
+    color: #94a3b8;
     font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
     padding: 12px 14px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 2px solid rgba(59, 130, 246, 0.4);
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
 
   table.data-table td {
     padding: 12px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     color: #f1f5f9;
     white-space: nowrap;
+    vertical-align: middle;
   }
 
-  table.data-table tr:hover td {
-    background: rgba(255, 255, 255, 0.03);
+  table.data-table tbody tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.018);
+  }
+
+  table.data-table tbody tr:hover td {
+    background: rgba(59, 130, 246, 0.09);
+  }
+
+  /* Mobile History Card View Styles */
+  .history-cards-container {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .history-card-item {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  .history-card-item:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(22, 32, 54, 0.85);
+  }
+
+  .history-avatar-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  }
+
+  .view-mode-toggle {
+    display: inline-flex;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 2px;
+  }
+
+  .btn-toggle-view {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-toggle-view.active {
+    background: rgba(59, 130, 246, 0.25);
+    color: #60a5fa;
+    font-weight: 600;
   }
 
   .badge-club-tag {
@@ -950,6 +1050,7 @@
     border-radius: 8px;
     font-size: 0.75rem;
     font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .status-tag {
@@ -1105,25 +1206,25 @@
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
   }
 
-  /* Mobile Bottom Navigation Bar */
+  /* Mobile Bottom Navigation Bar - Sleek Floating Feel */
   nav.mobile-bottom-nav {
     display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    height: calc(58px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: rgba(10, 15, 29, 0.95);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(10, 15, 29, 0.94);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 100;
     justify-content: space-around;
     align-items: center;
-    padding-left: 4px;
-    padding-right: 4px;
-    box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.55);
+    padding-left: 6px;
+    padding-right: 6px;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.65);
   }
 
   @media (min-width: 900px) {
@@ -1135,18 +1236,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     background: transparent;
     border: none;
-    color: var(--text-dim);
+    color: var(--text-muted);
     font-size: 0.68rem;
     font-family: inherit;
     cursor: pointer;
     flex: 1;
     min-width: 0;
     padding: 4px 2px;
-    transition: color 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
+    border-radius: 12px;
+  }
+
+  .bottom-nav-item:active {
+    transform: scale(0.92);
   }
 
   .bottom-nav-icon-wrap {
@@ -1162,7 +1268,7 @@
   .bottom-nav-item svg {
     width: 20px;
     height: 20px;
-    stroke-width: 2;
+    stroke-width: 2.1;
     transition: all 0.2s ease;
   }
 
@@ -1175,12 +1281,13 @@
     text-overflow: ellipsis;
     font-size: 0.67rem;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
     transition: color 0.2s ease, font-weight 0.2s ease;
   }
 
   .bottom-nav-item:hover {
-    color: var(--text-muted);
+    color: #cbd5e1;
   }
 
   .bottom-nav-item.active {
@@ -1188,18 +1295,58 @@
   }
 
   .bottom-nav-item.active .bottom-nav-icon-wrap {
-    background: rgba(59, 130, 246, 0.2);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.22);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.38);
   }
 
   .bottom-nav-item.active svg {
     stroke: #60a5fa;
-    transform: scale(1.05);
+    transform: scale(1.08);
   }
 
   .bottom-nav-item.active span {
     color: #93c5fd;
-    font-weight: 600;
+    font-weight: 700;
+  }
+
+  /* Mobile UX Optimization (< 768px) */
+  @media (max-width: 768px) {
+    .glass-card {
+      padding: 16px 14px;
+      border-radius: 16px;
+    }
+    .history-toolbar {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 12px !important;
+    }
+    .history-filters {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    .history-filters .search-box {
+      grid-column: 1 / -1;
+    }
+    .history-filters .form-select {
+      width: 100% !important;
+      font-size: 0.78rem !important;
+      padding: 7px 10px !important;
+    }
+    #clubs-quick-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+    }
+    .club-card-widget {
+      padding: 12px !important;
+    }
+    .club-card-title {
+      font-size: 0.88rem !important;
+      margin-bottom: 2px !important;
+    }
+    .club-card-desc {
+      font-size: 0.7rem !important;
+    }
   }
 
   /* Modal */
@@ -1535,27 +1682,19 @@
           <p style="font-size: 0.8rem; color: var(--text-muted);">บันทึกในฐานข้อมูลระบบ สามารถค้นหา กรองข้อมูล และ Export ออกเป็นไฟล์ได้ทันที</p>
         </div>
 
-        <!-- Export Buttons Group -->
+        <!-- Export Buttons Group (Clean & User Friendly) -->
         <div class="export-btn-group">
-          <button class="btn-secondary" onclick="syncFromCloud(false)" title="ดึงข้อมูลประวัติล่าสุดจาก Google Sheets">
-            <span>🔄</span> ซิงก์คลาวด์
-          </button>
           <button class="btn-export-excel" onclick="exportToExcel()" title="ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)">
             <span>📊</span> Export Excel (.xlsx)
           </button>
-          <button class="btn-export-csv" onclick="exportToCSV()" title="ดาวน์โหลดเป็นไฟล์ CSV (UTF-8)">
-            <span>📄</span> Export CSV
+          <button class="btn-export-pdf" onclick="exportToPDF()" title="ดาวน์โหลดหรือบันทึกเป็นไฟล์ PDF (.pdf)">
+            <span>📕</span> Export PDF (.pdf)
           </button>
-          <button class="btn-secondary" onclick="window.print()" title="พิมพ์รายงาน">
-            <span>🖨️</span> พิมพ์
-          </button>
-          <button class="btn-secondary" onclick="exportDatabaseJSON()" title="สำรองฐานข้อมูลเป็น JSON">
-            <span>💾</span> Backup JSON
+          <button class="btn-secondary" onclick="exportToPDF()" title="พิมพ์รายงาน">
+            <span>🖨️</span> พิมพ์รายงาน
           </button>
         </div>
       </div>
-
-
 
       <!-- Filters & Search Toolbar -->
       <div class="history-toolbar" style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px;">
@@ -1568,7 +1707,7 @@
 
           <!-- Filter Club -->
           <select id="filter-club" class="form-select" style="width: auto; padding: 8px 12px;" onchange="applyHistoryFilters()">
-            <option value="all">ทุกชมรม / ทุกกิจกรรม</option>
+            <option value="all">🏆 ทุกชมรม / ทุกกิจกรรม</option>
             <option value="basketball">🏀 ชมรมบาสเก็ตบอล</option>
             <option value="golf">⛳ ชมรมกอล์ฟ</option>
             <option value="archery">🎯 ชมรมยิงธนู</option>
@@ -1578,45 +1717,61 @@
 
           <!-- Filter Status -->
           <select id="filter-status" class="form-select" style="width: auto; padding: 8px 12px;" onchange="applyHistoryFilters()">
-            <option value="all">สถานะทั้งหมด</option>
+            <option value="all">⚡ สถานะทั้งหมด</option>
             <option value="active">🟢 กำลังใช้งาน (ยังไม่ออก)</option>
             <option value="completed">⚪ ออกจากอาคารแล้ว</option>
           </select>
 
           <!-- Filter Date Range -->
           <select id="filter-date-preset" class="form-select" style="width: auto; padding: 8px 12px;" onchange="applyHistoryFilters()">
-            <option value="all">ทุกช่วงเวลา</option>
+            <option value="all">📅 ทุกช่วงเวลา</option>
             <option value="today">เฉพาะวันนี้</option>
             <option value="week">7 วันล่าสุด</option>
             <option value="month">เดือนนี้</option>
           </select>
         </div>
 
-        <div style="font-size: 0.8rem; color: var(--text-muted);">
-          พบ <strong id="filtered-count" style="color: #60a5fa;">0</strong> รายการ
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; width: 100%;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            พบ <strong id="filtered-count" style="color: #60a5fa;">0</strong> รายการ
+          </div>
+          <!-- View Toggle: Table vs Cards for Mobile/Desktop -->
+          <div class="view-mode-toggle">
+            <button type="button" id="toggle-table-view" class="btn-toggle-view active" onclick="setHistoryViewMode('table')" title="แสดงผลแบบตาราง">
+              📋 ตาราง
+            </button>
+            <button type="button" id="toggle-cards-view" class="btn-toggle-view" onclick="setHistoryViewMode('cards')" title="แสดงผลแบบการ์ด">
+              🗂️ การ์ด
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- History Table Container (Desktop / Tablet) -->
-      <div class="table-responsive">
+      <div class="table-responsive" id="history-table-container">
         <table class="data-table" id="history-table">
           <thead>
             <tr>
-              <th>วัน-เวลาเข้า</th>
-              <th>เวลาออก</th>
-              <th>ระยะเวลา</th>
-              <th>ชื่อ-นามสกุล</th>
-              <th>สังกัด</th>
-              <th>ชมรม/กิจกรรม</th>
-              <th>สถานะ</th>
-              <th>หมายเหตุ</th>
-              <th style="text-align: center;">จัดการ</th>
+              <th style="width: 140px;">📅 วัน-เวลาเข้า</th>
+              <th style="width: 110px;">🚪 เวลาออก</th>
+              <th style="width: 115px;">⏱️ ระยะเวลา</th>
+              <th>👤 ผู้เข้าใช้งาน</th>
+              <th>🏢 สังกัด / ฝ่าย</th>
+              <th>🏆 ชมรม / กิจกรรม</th>
+              <th style="width: 115px;">⚡ สถานะ</th>
+              <th>📝 หมายเหตุ</th>
+              <th style="text-align: center; width: 90px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="history-table-body">
             <!-- Rendered by JS -->
           </tbody>
         </table>
+      </div>
+
+      <!-- History Cards Container (Mobile Friendly) -->
+      <div class="history-cards-container" id="history-cards-container">
+        <!-- Rendered by JS for Mobile View -->
       </div>
 
       <!-- Pagination / Footer Info -->
@@ -1855,24 +2010,33 @@
         </div>
       </div>
 
-      <!-- Admin Record Management & Deletion Card (ย้ายการลบประวัติต่างๆ มาไว้ที่นี่) -->
+      <!-- Admin Record Management & Database Tools (ย้ายการซิงก์และสำรองข้อมูลมาไว้ที่นี่) -->
       <div class="glass-card" style="grid-column: 1 / -1; margin-top: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div>
-            <h2 style="font-size: 1.15rem; font-weight: 600; color: #fff;">🗑️ จัดการและลบประวัติการใช้งาน (เฉพาะ Admin)</h2>
+            <h2 style="font-size: 1.15rem; font-weight: 600; color: #fff;">🛠️ จัดการฐานข้อมูลและประวัติการใช้งาน (เฉพาะ Admin)</h2>
             <p style="font-size: 0.8rem; color: var(--text-muted);">
-              การลบข้อมูลในส่วนนี้ได้รับการคุ้มครองด้วยรหัสผ่าน Admin สามารถค้นหาและลบรายบุคคล หรือล้างประวัติทั้งหมด
+              จัดการฐานข้อมูลระบบ ซิงก์คลาวด์ สำรองและกู้คืนข้อมูล (Backup JSON / CSV) และจัดการลบประวัติ (คุ้มครองด้วยรหัสผ่าน Admin)
             </p>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <label class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; margin-bottom: 0;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="syncFromCloud(false)" title="ดึงข้อมูลล่าสุดจาก Google Sheets ตอนนี้">
+              <span>🔄</span> ซิงก์คลาวด์
+            </button>
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="exportDatabaseJSON()" title="สำรองฐานข้อมูลทั้งหมดเป็น JSON">
+              <span>💾</span> Backup JSON
+            </button>
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="exportToCSV()" title="ส่งออกประวัติการใช้งานเป็นไฟล์ CSV">
+              <span>📄</span> Export CSV
+            </button>
+            <label class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; margin-bottom: 0;" title="นำเข้าฐานข้อมูลจาก JSON">
               <span>📥</span> นำเข้า JSON
               <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importDatabaseJSON(event)">
             </label>
-            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="loadSampleDemoData()">
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem;" onclick="loadSampleDemoData()" title="สร้างข้อมูลจำลองเพื่อทดสอบระบบ">
               <span>🎲</span> โหลด Demo Records
             </button>
-            <button type="button" class="btn-secondary" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4); font-weight: 600; font-size: 0.8rem;" onclick="clearAllData()">
+            <button type="button" class="btn-secondary" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4); font-weight: 600; font-size: 0.8rem;" onclick="clearAllData()" title="ล้างประวัติการใช้งานทั้งหมด">
               <span>🗑️</span> ล้างประวัติทั้งหมด
             </button>
           </div>
@@ -1916,7 +2080,7 @@
   </button>
   <button class="bottom-nav-item" data-tab="clubs" onclick="switchMainTab('clubs')">
     <div class="bottom-nav-icon-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 4h12v6a6 6 0 0 1-12 0V4z"/></svg>
     </div>
     <span>สถานะชมรม</span>
   </button>
@@ -2260,7 +2424,7 @@ let CLUBS = getStoredClubs();
 
 function populateClubDropdowns() {
   const optionsHtml = CLUBS.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-  const histEl = document.getElementById('history-filter-club');
+  const histEl = document.getElementById('filter-club') || document.getElementById('history-filter-club');
   if (histEl) {
     const curVal = histEl.value;
     histEl.innerHTML = `<option value="all">🏆 ทุกชมรม / ทุกกิจกรรม</option>` + optionsHtml;
@@ -3811,9 +3975,50 @@ async function forceCheckOutLog(id) {
 
 /* ─── HISTORY & EXPORT ENGINE ─── */
 let filteredLogs = [];
+let historyViewMode = 'table';
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function initHistoryViewMode() {
+  const saved = localStorage.getItem('snb_history_view_mode');
+  if (saved && (saved === 'table' || saved === 'cards')) {
+    setHistoryViewMode(saved, false);
+  } else if (window.innerWidth <= 768) {
+    setHistoryViewMode('cards', false);
+  } else {
+    setHistoryViewMode('table', false);
+  }
+}
+
+function setHistoryViewMode(mode, savePref = true) {
+  historyViewMode = mode;
+  if (savePref) {
+    try { localStorage.setItem('snb_history_view_mode', mode); } catch (e) {}
+  }
+
+  const btnTable = document.getElementById('toggle-table-view');
+  const btnCards = document.getElementById('toggle-cards-view');
+  const tableCont = document.getElementById('history-table-container');
+  const cardsCont = document.getElementById('history-cards-container');
+
+  if (btnTable) btnTable.classList.toggle('active', mode === 'table');
+  if (btnCards) btnCards.classList.toggle('active', mode === 'cards');
+
+  if (tableCont) tableCont.style.display = mode === 'table' ? 'block' : 'none';
+  if (cardsCont) cardsCont.style.display = mode === 'cards' ? 'flex' : 'none';
+}
 
 async function loadHistoryTable() {
   allLogsCache = await appDB.getAllLogs();
+  initHistoryViewMode();
   applyHistoryFilters();
 }
 
@@ -3860,74 +4065,171 @@ function applyHistoryFilters() {
 
 function renderHistoryTableRows() {
   const tbody = document.getElementById('history-table-body');
-  if (!tbody) return;
+  const cardsCont = document.getElementById('history-cards-container');
+  const pageInfo = document.getElementById('table-page-info');
+
+  if (pageInfo) {
+    pageInfo.textContent = `แสดงทั้งหมด ${filteredLogs.length} รายการ`;
+  }
 
   if (filteredLogs.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 40px;">
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 40px;">
+            ไม่พบประวัติการใช้งานตามเงื่อนไขที่เลือก
+          </td>
+        </tr>
+      `;
+    }
+    if (cardsCont) {
+      cardsCont.innerHTML = `
+        <div style="text-align: center; color: var(--text-dim); padding: 36px 20px; background: rgba(15,23,42,0.4); border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.08);">
           ไม่พบประวัติการใช้งานตามเงื่อนไขที่เลือก
-        </td>
-      </tr>
-    `;
+        </div>
+      `;
+    }
     return;
   }
 
-  tbody.innerHTML = filteredLogs.map(log => {
-    const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
-    const entryDate = new Date(log.checkInTime);
-    const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
-    
-    let durationText = '-';
-    if (log.durationMinutes) {
-      const hrs = Math.floor(log.durationMinutes / 60);
-      const mins = log.durationMinutes % 60;
-      durationText = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
-    } else if (log.status === 'active') {
-      durationText = '<span style="color:#34d399;">กำลังใช้งาน</span>';
-    }
+  // 1. Render Desktop / Tablet Table Rows
+  if (tbody) {
+    tbody.innerHTML = filteredLogs.map(log => {
+      const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
+      const entryDate = new Date(log.checkInTime);
+      const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+      
+      let durationText = '-';
+      if (log.durationMinutes) {
+        const hrs = Math.floor(log.durationMinutes / 60);
+        const mins = log.durationMinutes % 60;
+        durationText = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
+      } else if (log.status === 'active') {
+        durationText = '<span style="color:#34d399; font-weight:600;">กำลังใช้งาน</span>';
+      }
 
-    return `
-      <tr>
-        <td>
-          <div style="font-weight: 500;">${formatThaiDate(entryDate)}</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">${formatThaiTime(entryDate)}</div>
-        </td>
-        <td>
-          ${exitDate ? `
-            <div>${formatThaiTime(exitDate)}</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${formatThaiDate(exitDate)}</div>
-          ` : '<span style="color: #94a3b8;">ยังไม่ออก</span>'}
-        </td>
-        <td>${durationText}</td>
-        <td>
-          <div style="font-weight: 600;">${log.userName}</div>
-          <div style="font-size: 0.72rem; color: var(--text-dim);">${log.id}</div>
-        </td>
-        <td>${log.department}</td>
-        <td>
-          <span class="badge-club-tag" style="background: rgba(255,255,255,0.06);">
-            ${club.icon} ${club.name}
-          </span>
-        </td>
-        <td>
-          <span class="status-tag ${log.status === 'active' ? 'status-active' : 'status-completed'}">
-            ${log.status === 'active' ? '🟢 กำลังใช้งาน' : (log.status === 'cancelled' ? '❌ ยกเลิก' : '⚪ เสร็จสิ้น')}
-          </span>
-        </td>
-        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
-          ${log.note || '-'}
-        </td>
-        <td style="text-align: center;">
-          ${log.status === 'active' ? `
-            <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #34d399;" onclick="forceCheckOutLog('${log.id}')">
-              เช็คเอาต์
-            </button>
-          ` : '<span style="color:var(--text-dim);font-size:0.75rem;">-</span>'}
-        </td>
-      </tr>
-    `;
-  }).join('');
+      const initial = (log.userName || '?').trim().charAt(0);
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: #fff;">${formatThaiDate(entryDate)}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${formatThaiTime(entryDate)} น.</div>
+          </td>
+          <td>
+            ${exitDate ? `
+              <div style="font-weight: 500;">${formatThaiTime(exitDate)} น.</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${formatThaiDate(exitDate)}</div>
+            ` : '<span style="color: #60a5fa; font-weight: 500;">ยังไม่ออก</span>'}
+          </td>
+          <td>${durationText}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="history-avatar-circle" style="width: 28px; height: 28px; font-size: 0.75rem;">${escapeHtml(initial)}</div>
+              <div>
+                <div style="font-weight: 600; color: #fff;">${escapeHtml(log.userName)}</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); font-family: monospace;">#${escapeHtml(log.id)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${escapeHtml(log.department)}</td>
+          <td>
+            <span class="badge-club-tag" style="background: rgba(255,255,255,0.06);">
+              ${club.icon} ${escapeHtml(club.name)}
+            </span>
+          </td>
+          <td>
+            <span class="status-tag ${log.status === 'active' ? 'status-active' : 'status-completed'}">
+              ${log.status === 'active' ? '🟢 ใช้งานอยู่' : (log.status === 'cancelled' ? '❌ ยกเลิก' : '⚪ เสร็จสิ้น')}
+            </span>
+          </td>
+          <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(log.note || '')}">
+            ${log.note ? escapeHtml(log.note) : '<span style="color: var(--text-dim);">-</span>'}
+          </td>
+          <td style="text-align: center;">
+            ${log.status === 'active' ? `
+              <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.74rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-weight: 600;" onclick="forceCheckOutLog('${log.id}')">
+                เช็คเอาต์
+              </button>
+            ` : '<span style="color:var(--text-dim);font-size:0.75rem;">-</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 2. Render Mobile Card Items
+  if (cardsCont) {
+    cardsCont.innerHTML = filteredLogs.map(log => {
+      const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
+      const entryDate = new Date(log.checkInTime);
+      const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+      
+      let durationText = '-';
+      if (log.durationMinutes) {
+        const hrs = Math.floor(log.durationMinutes / 60);
+        const mins = log.durationMinutes % 60;
+        durationText = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
+      } else if (log.status === 'active') {
+        durationText = '<span style="color:#34d399; font-weight:600;">กำลังใช้งาน</span>';
+      }
+
+      const initial = (log.userName || '?').trim().charAt(0);
+
+      return `
+        <div class="history-card-item">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="history-avatar-circle">${escapeHtml(initial)}</div>
+              <div>
+                <div style="font-weight: 600; color: #fff; font-size: 0.95rem;">${escapeHtml(log.userName)}</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(log.department)}</div>
+              </div>
+            </div>
+            <span class="status-tag ${log.status === 'active' ? 'status-active' : 'status-completed'}">
+              ${log.status === 'active' ? '🟢 ใช้งานอยู่' : (log.status === 'cancelled' ? '❌ ยกเลิก' : '⚪ เสร็จสิ้น')}
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; background: rgba(0,0,0,0.22); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.72rem; display: block;">🏆 ชมรม / กิจกรรม</span>
+              <span class="badge-club-tag" style="background: rgba(255,255,255,0.06); margin-top: 3px;">
+                ${club.icon} ${escapeHtml(club.name)}
+              </span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.72rem; display: block;">⏱️ ระยะเวลา</span>
+              <span style="display: inline-block; margin-top: 4px; font-weight: 500;">${durationText}</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.72rem; display: block;">📅 เวลาเข้า</span>
+              <div style="font-weight: 500; margin-top: 2px;">${formatThaiTime(entryDate)} น. <small style="color: var(--text-dim);">(${formatThaiDate(entryDate)})</small></div>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.72rem; display: block;">🚪 เวลาออก</span>
+              <div style="font-weight: 500; margin-top: 2px;">${exitDate ? `${formatThaiTime(exitDate)} น. <small style="color: var(--text-dim);">(${formatThaiDate(exitDate)})</small>` : '<span style="color: #60a5fa; font-weight: 500;">ยังไม่ออก</span>'}</div>
+            </div>
+          </div>
+
+          ${log.note ? `
+            <div style="font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #60a5fa;">
+              📝 <strong>หมายเหตุ:</strong> ${escapeHtml(log.note)}
+            </div>
+          ` : ''}
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 2px;">
+            <span style="font-size: 0.7rem; color: var(--text-dim); font-family: monospace;">#${escapeHtml(log.id)}</span>
+            ${log.status === 'active' ? `
+              <button class="btn-secondary" style="padding: 5px 12px; font-size: 0.78rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-weight: 600;" onclick="forceCheckOutLog('${log.id}')">
+                🚪 เช็คเอาต์ตอนนี้
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function renderAdminLogsList() {
@@ -4048,6 +4350,332 @@ function exportToExcel() {
 
   XLSX.writeFile(wb, filename);
   toast(`Export ไฟล์ ${filename} สำเร็จ ✓`);
+}
+
+/* ─── EXPORT TO PDF VIA PRINTABLE A4 LANDSCAPE DOCUMENT ─── */
+function exportToPDF() {
+  if (!filteredLogs || filteredLogs.length === 0) {
+    toast('ไม่มีข้อมูลที่จะ Export เป็น PDF', true);
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const thaiPrintDate = `${formatThaiDate(now)} เวลา ${formatThaiTime(now)} น.`;
+
+  // Get current filter labels for report header
+  const clubFilterEl = document.getElementById('filter-club');
+  const clubFilterText = (clubFilterEl && clubFilterEl.selectedIndex >= 0) ? clubFilterEl.options[clubFilterEl.selectedIndex].text : 'ทุกชมรม';
+  const dateFilterEl = document.getElementById('filter-date-preset');
+  const dateFilterText = (dateFilterEl && dateFilterEl.selectedIndex >= 0) ? dateFilterEl.options[dateFilterEl.selectedIndex].text : 'ทุกช่วงเวลา';
+  const statusFilterEl = document.getElementById('filter-status');
+  const statusFilterText = (statusFilterEl && statusFilterEl.selectedIndex >= 0) ? statusFilterEl.options[statusFilterEl.selectedIndex].text : 'ทั้งหมด';
+
+  const totalCount = filteredLogs.length;
+  const activeCount = filteredLogs.filter(l => l.status === 'active').length;
+  const completedCount = filteredLogs.filter(l => l.status === 'completed').length;
+
+  const tableRowsHtml = filteredLogs.map((log, index) => {
+    const entryDate = new Date(log.checkInTime);
+    const exitDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+    let durationText = '-';
+    if (log.durationMinutes) {
+      const hrs = Math.floor(log.durationMinutes / 60);
+      const mins = log.durationMinutes % 60;
+      durationText = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
+    } else if (log.status === 'active') {
+      durationText = 'กำลังใช้งาน';
+    }
+
+    const club = CLUBS.find(c => c.id === log.clubId) || { icon: '🏢', name: log.clubName };
+
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 500;">${index + 1}</td>
+        <td>
+          <div style="font-weight: 600;">${formatThaiDate(entryDate)}</div>
+          <div style="font-size: 8pt; color: #64748b;">${formatThaiTime(entryDate)} น.</div>
+        </td>
+        <td>
+          ${exitDate ? `
+            <div style="font-weight: 500;">${formatThaiTime(exitDate)} น.</div>
+            <div style="font-size: 8pt; color: #64748b;">${formatThaiDate(exitDate)}</div>
+          ` : '<span style="color: #0284c7; font-weight: 600;">ยังไม่ออก</span>'}
+        </td>
+        <td style="text-align: center;">${durationText}</td>
+        <td>
+          <div style="font-weight: 600; color: #0f172a;">${escapeHtml(log.userName)}</div>
+          <div style="font-size: 7.5pt; color: #64748b;">#${escapeHtml(log.id)}</div>
+        </td>
+        <td>${escapeHtml(log.department)}</td>
+        <td>${club.icon} ${escapeHtml(club.name)}</td>
+        <td style="text-align: center;">
+          <span class="${log.status === 'active' ? 'badge-active' : 'badge-done'}">
+            ${log.status === 'active' ? '🟢 กำลังใช้งาน' : (log.status === 'cancelled' ? '❌ ยกเลิก' : '⚪ เสร็จสิ้น')}
+          </span>
+        </td>
+        <td style="max-width: 140px; word-break: break-word;">${escapeHtml(log.note || '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const reportHtml = `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>รายงานการเข้าใช้งานอาคารนันทนาการ ต.0025 (${dateStr})</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm 12mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      margin: 0;
+      padding: 10px;
+      font-size: 9.5pt;
+      line-height: 1.4;
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .org-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .org-badge {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .title-block h1 {
+      font-size: 14pt;
+      font-weight: 700;
+      margin: 0 0 2px 0;
+      color: #0c4a6e;
+    }
+    .title-block p {
+      font-size: 8.5pt;
+      color: #475569;
+      margin: 0;
+    }
+    .meta-box {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #475569;
+      line-height: 1.4;
+    }
+    .summary-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 14px;
+      margin-bottom: 12px;
+      font-size: 8.5pt;
+    }
+    .summary-item {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .summary-item strong {
+      color: #0f172a;
+    }
+    table.report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin-bottom: 16px;
+    }
+    table.report-table th {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 6px 8px;
+      font-weight: 600;
+      text-align: left;
+      border: 1px solid #0f172a;
+      font-size: 8.5pt;
+      white-space: nowrap;
+    }
+    table.report-table td {
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      vertical-align: middle;
+    }
+    table.report-table tbody tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .badge-active {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 8pt;
+      display: inline-block;
+    }
+    .badge-done {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8pt;
+      display: inline-block;
+    }
+    .signature-section {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 25px;
+      page-break-inside: avoid;
+    }
+    .sig-box {
+      text-align: center;
+      width: 220px;
+      font-size: 8.5pt;
+      color: #334155;
+    }
+    .sig-line {
+      border-bottom: 1px dotted #64748b;
+      height: 35px;
+      margin-bottom: 6px;
+    }
+    @media print {
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-header">
+    <div class="org-title">
+      <div class="org-badge">⚡</div>
+      <div class="title-block">
+        <h1>รายงานประวัติการเข้าใช้งานอาคารนันทนาการ (ต.0025)</h1>
+        <p>การไฟฟ้าฝ่ายผลิตแห่งประเทศไทย (กฟผ.) • ฝ่ายปฏิบัติการภาคตะวันออกเฉียงเหนือ</p>
+      </div>
+    </div>
+    <div class="meta-box">
+      <div><strong>วันที่พิมพ์:</strong> ${thaiPrintDate}</div>
+      <div><strong>เงื่อนไข:</strong> ${escapeHtml(clubFilterText)} | ${escapeHtml(dateFilterText)}</div>
+    </div>
+  </div>
+
+  <div class="summary-strip">
+    <div class="summary-item">
+      <span>รายการทั้งหมด:</span>
+      <strong>${totalCount} รายการ</strong>
+    </div>
+    <div class="summary-item">
+      <span>🟢 กำลังใช้งาน:</span>
+      <strong style="color: #16a34a;">${activeCount} คน</strong>
+    </div>
+    <div class="summary-item">
+      <span>⚪ สิ้นสุดการใช้งาน:</span>
+      <strong>${completedCount} รายการ</strong>
+    </div>
+    <div class="summary-item">
+      <span>สถานะตัวกรอง:</span>
+      <span>${escapeHtml(statusFilterText)}</span>
+    </div>
+  </div>
+
+  <table class="report-table">
+    <thead>
+      <tr>
+        <th style="width: 35px; text-align: center;">ลำดับ</th>
+        <th style="width: 120px;">📅 วัน-เวลาเข้า</th>
+        <th style="width: 110px;">🚪 เวลาออก</th>
+        <th style="width: 85px; text-align: center;">⏱️ ระยะเวลา</th>
+        <th>👤 ผู้เข้าใช้งาน</th>
+        <th>🏢 สังกัด / ฝ่าย</th>
+        <th>🏆 ชมรม / กิจกรรม</th>
+        <th style="width: 95px; text-align: center;">⚡ สถานะ</th>
+        <th>📝 หมายเหตุ</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRowsHtml}
+    </tbody>
+  </table>
+
+  <div class="signature-section">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div>(ลงชื่อ).....................................................</div>
+      <div style="margin-top: 4px;">เจ้าหน้าที่ผู้จัดทำรายงาน</div>
+      <div style="margin-top: 2px; color: #64748b;">วันที่ ........ / ........ / ........</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div>(ลงชื่อ).....................................................</div>
+      <div style="margin-top: 4px;">หัวหน้าแผนก / ผู้ควบคุมอาคาร</div>
+      <div style="margin-top: 2px; color: #64748b;">วันที่ ........ / ........ / ........</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  // Hidden iframe technique for seamless printing & Save to PDF
+  let printFrame = document.getElementById('report-pdf-print-frame');
+  if (!printFrame) {
+    printFrame = document.createElement('iframe');
+    printFrame.id = 'report-pdf-print-frame';
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    document.body.appendChild(printFrame);
+  }
+
+  const doc = printFrame.contentWindow.document;
+  doc.open();
+  doc.write(reportHtml);
+  doc.close();
+
+  toast('กำลังเตรียมรายงาน PDF (เลือก "บันทึกเป็น PDF" หรือพิมพ์ได้ทันที)');
+
+  setTimeout(() => {
+    try {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    } catch (e) {
+      console.warn('Frame print failed, opening new window', e);
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(reportHtml);
+        win.document.close();
+        win.focus();
+        setTimeout(() => win.print(), 500);
+      }
+    }
+  }, 600);
 }
 
 /* ─── EXPORT TO CSV WITH UTF-8 BOM ─── */
@@ -4877,6 +5505,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   populateClubDropdowns();
   initProfileDropdowns();
   startLiveClock();
+  initHistoryViewMode();
   selectClub(currentClubId);
   refreshProfileDisplay();
   await refreshDataViews();
