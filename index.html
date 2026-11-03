@@ -2,14 +2,18 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>ระบบลงทะเบียนเข้าใช้งานอาคารและกิจกรรมกีฬา | กฟผ. ไทรน้อย</title>
 <link rel="apple-touch-icon" href="logo.jpg">
 <link rel="icon" type="image/jpeg" href="logo.jpg">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ระบบใช้งานอาคาร">
+<meta name="apple-mobile-web-app-title" content="SNB ไทรน้อย">
 <meta name="theme-color" content="#090d16">
+<meta name="msapplication-navbutton-color" content="#090d16">
+<meta name="format-detection" content="telephone=no">
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,15 +51,35 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+  html {
+    height: 100%;
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     font-family: 'Prompt', 'Sarabun', sans-serif;
     background: var(--bg-main);
     color: var(--text-main);
     min-height: 100vh;
+    min-height: -webkit-fill-available;
     min-height: 100dvh;
     overflow-x: hidden;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
     position: relative;
+    padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); /* Space for mobile bottom nav with safe area */
+  }
+
+  /* When running as installed standalone app on mobile */
+  @media all and (display-mode: standalone) {
+    body {
+      padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
+    }
+    .pwa-install-banner, .btn-fullscreen-toggle {
+      display: none !important;
+    }
   }
 
   @media (min-width: 900px) {
@@ -1554,6 +1578,82 @@
   }
   @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
 
+  /* PWA Floating Install Banner */
+  .pwa-install-banner {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
+    max-width: 480px;
+    margin: 0 auto;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: var(--radius-lg);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+    animation: slideDownBanner 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideDownBanner {
+    from { transform: translateY(-40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .pwa-btn-open-app {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    font-family: inherit;
+    transition: filter 0.15s ease;
+  }
+  .pwa-btn-open-app:active {
+    transform: scale(0.96);
+  }
+  .pwa-btn-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .pwa-btn-close:hover { color: #fff; }
+
+  /* Fullscreen toggle button in header */
+  .btn-fullscreen-toggle {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .btn-fullscreen-toggle:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
   /* Tab View visibility */
   .tab-view { display: none; }
   .tab-view.active { display: block; }
@@ -1572,6 +1672,27 @@
 
 <canvas id="bg-canvas"></canvas>
 <div class="ambient-glow" id="ambient-glow"></div>
+
+<!-- Mobile App Mode / PWA Prompt Banner -->
+<div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+  <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+    <img src="logo.jpg" alt="SNB App Icon" style="width: 38px; height: 38px; border-radius: 9px; object-fit: cover; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+    <div style="min-width: 0;">
+      <div style="font-weight: 700; font-size: 0.84rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        📱 ใช้งานแบบแอปมือถือเต็มจอ
+      </div>
+      <div style="font-size: 0.7rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        ซ่อนแถบเบราว์เซอร์ ลื่นไหลเหมือนแอปจริง
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+    <button type="button" class="pwa-btn-open-app" onclick="triggerPWAInstallOrGuide()">
+      เปิดเต็มจอ
+    </button>
+    <button type="button" class="pwa-btn-close" onclick="dismissPWABanner()" title="ปิด">&times;</button>
+  </div>
+</div>
 
 <div class="app-container">
 
@@ -1605,7 +1726,10 @@
     </nav>
 
     <!-- Header Right Live Status -->
-    <div class="header-actions">
+    <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+      <button type="button" class="btn-fullscreen-toggle" onclick="toggleFullscreen()" title="สลับโหมดเต็มจอ / ซ่อนแถบเบราว์เซอร์">
+        <span>⛶</span> เต็มจอ
+      </button>
       <div class="occupants-pill" onclick="switchMainTab('history')" title="ดูผู้ที่กำลังใช้งานอาคาร">
         <div class="pulse-dot"></div>
         <span>ใช้งาน <strong id="header-active-count">0</strong> คน</span>
@@ -2400,6 +2524,38 @@
         💾 บันทึกเพิ่มชมรม
       </button>
     </div>
+  </div>
+<!-- Modal iOS Add to Home Screen Guide -->
+<div class="modal-backdrop" id="modal-ios-pwa" onclick="if(event.target===this) closeIosPwaModal()">
+  <div class="modal-content" style="max-width: 390px; text-align: center;">
+    <div style="font-size: 2.5rem; margin-bottom: 6px;">📱</div>
+    <h3 class="modal-title" style="margin-bottom: 6px; font-size: 1.15rem;">วิธีเปิดแบบแอปมือถือเต็มจอ</h3>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+      สำหรับ iPhone / iPad ทำตาม 3 ขั้นตอนนี้เพื่อซ่อนแถบ Safari ทั้งหมด:
+    </p>
+
+    <div style="text-align: left; background: rgba(255,255,255,0.04); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; line-height: 1.6;">
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <span style="background: rgba(59,130,246,0.25); color: #60a5fa; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">1</span>
+        <span>แตะปุ่ม <strong>"แชร์ (Share)"</strong> <span style="display: inline-block; padding: 1px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 0.8rem;">⎋</span> ที่แถบเมนูล่าง Safari</span>
+      </div>
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <span style="background: rgba(59,130,246,0.25); color: #60a5fa; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">2</span>
+        <span>เลื่อนลงแล้วแตะ <strong>"เพิ่มไปยังหน้าจอโฮม (Add to Home Screen)"</strong> ➕</span>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <span style="background: rgba(59,130,246,0.25); color: #60a5fa; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">3</span>
+        <span>แตะ <strong>"เพิ่ม (Add)"</strong> มุมขวาบน แล้วเปิดใช้งานจากไอคอนบนหน้าจอมือถือ</span>
+      </div>
+    </div>
+
+    <div style="font-size: 0.74rem; color: #34d399; margin-bottom: 16px; line-height: 1.4;">
+      ✨ เมื่อเปิดจากหน้าจอโฮม แถบเบราว์เซอร์จะหายไป 100% เสมือนแอปแท้
+    </div>
+
+    <button type="button" class="btn-checkin-action btn-in" style="font-size: 0.92rem; padding: 10px;" onclick="closeIosPwaModal()">
+      รับทราบและเข้าใจแล้ว
+    </button>
   </div>
 </div>
 
@@ -5955,6 +6111,92 @@ async function clearAllData() {
   }
 }
 
+/* ─── PWA & FULLSCREEN MOBILE APP ENGINE ─── */
+let deferredInstallPrompt = null;
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.log('SW registration error:', err);
+    });
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  checkAndShowPWABanner();
+});
+
+function isStandaloneMode() {
+  return (window.matchMedia('(display-mode: standalone)').matches) || 
+         (window.navigator.standalone === true) || 
+         document.referrer.includes('android-app://');
+}
+
+function checkAndShowPWABanner() {
+  if (isStandaloneMode()) return;
+  const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
+  if (!isMobile) return;
+
+  const dismissedTime = localStorage.getItem('snb_pwa_banner_dismissed');
+  if (dismissedTime && (Date.now() - Number(dismissedTime)) < 24 * 3600 * 1000) {
+    return;
+  }
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function dismissPWABanner() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('snb_pwa_banner_dismissed', String(Date.now()));
+}
+
+async function triggerPWAInstallOrGuide() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+      dismissPWABanner();
+      toast('กำลังติดตั้งแอปบนหน้าจอมือถือ... ✓');
+    }
+    deferredInstallPrompt = null;
+    return;
+  }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    document.getElementById('modal-ios-pwa')?.classList.add('show');
+  } else {
+    toggleFullscreen();
+  }
+}
+
+function closeIosPwaModal() {
+  document.getElementById('modal-ios-pwa')?.classList.remove('show');
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(() => {});
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    }
+    toast('📱 เข้าสู่โหมดเต็มจอ (Fullscreen) ✓');
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+    toast('ออกจากโหมดเต็มจอ');
+  }
+}
+
 /* ─── INITIALIZATION ON PAGE LOAD ─── */
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -5983,6 +6225,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   setInterval(() => {
     syncFromCloud(true);
   }, 20000);
+
+  // Check and show PWA mobile banner if eligible
+  setTimeout(checkAndShowPWABanner, 1200);
 
   // If new user with no profile, auto prompt setup modal
   const profile = getUserProfile();

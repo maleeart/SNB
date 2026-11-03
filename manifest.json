@@ -1,0 +1,19 @@
+{
+  "name": "ระบบลงทะเบียนใช้งานอาคารและกิจกรรมกีฬา กฟผ. ไทรน้อย",
+  "short_name": "SNB กฟผ.",
+  "description": "ระบบลงทะเบียนเข้าใช้งานอาคารอเนกประสงค์ ต.0025 กฟผ. ไทรน้อย",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
