@@ -2585,44 +2585,103 @@ function getClubOperatingStatus(clubId, now = new Date()) {
 }
 
 /* ─── CLOUD SYNC FOR CLUBS CONFIGURATION ─── */
+function applyClubsFromCloud(newClubs) {
+  if (!Array.isArray(newClubs) || newClubs.length === 0) return false;
+  const cloudClubsStr = JSON.stringify(newClubs);
+  const localClubsStr = JSON.stringify(CLUBS);
+  CLUBS = newClubs;
+  localStorage.setItem('snb_custom_clubs', cloudClubsStr);
+  populateClubDropdowns();
+  if (!CLUBS.some(c => c.id === currentClubId)) {
+    currentClubId = CLUBS[0] ? CLUBS[0].id : 'basketball';
+    localStorage.setItem('snb_active_club', currentClubId);
+  }
+  selectClub(currentClubId);
+  renderAdminSchedulesEditor();
+  updateBannerClubSchedule();
+  updateBannerClubOccupants();
+  renderClubTabs();
+  renderCheckInArea();
+  renderClubsQuickGrid();
+  renderClubsFullDirectory();
+  return cloudClubsStr !== localClubsStr;
+}
+
 async function syncClubsToCloud(clubs) {
   const url = getCloudApiUrl();
   if (!url || !Array.isArray(clubs) || clubs.length === 0) return;
+  const jsonStr = JSON.stringify(clubs);
+
+  // Channel 1: Dedicated saveClubs action (if upgraded google_sheets_apps_script.js is deployed)
+  try {
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveClubs', clubs: clubs })
+    }).catch(() => {});
+  } catch(e) {}
+
+  // Channel 2: Real-time Cloud Bridge record (works on ANY version of Google Apps Script)
   try {
     await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'saveClubs', clubs: clubs })
+      body: JSON.stringify({
+        action: 'checkIn',
+        id: 'SYS-CLUBS-CONFIG',
+        userName: 'SYSTEM_CLUBS_CONFIG',
+        department: 'SYSTEM',
+        empId: 'CONFIG',
+        clubId: 'system',
+        clubName: 'System Configuration',
+        checkInTime: new Date().toISOString(),
+        note: jsonStr
+      })
     });
-    console.log('Clubs configuration synced to cloud successfully');
+    console.log('Clubs configuration synced to cloud bridge successfully');
   } catch(e) {
-    console.warn('Failed to sync clubs to cloud:', e);
+    console.warn('Failed to sync clubs to cloud bridge:', e);
   }
 }
 
 async function fetchClubsFromCloud() {
   const url = getCloudApiUrl();
   if (!url) return false;
+
+  // 1. Try dedicated getClubs endpoint
   try {
-    const fetchUrl = url + (url.includes('?') ? '&' : '?') + 'action=getClubs&t=' + Date.now();
-    const res = await fetch(fetchUrl);
-    const data = await res.json();
-    if (data && Array.isArray(data.clubs) && data.clubs.length > 0) {
-      CLUBS = data.clubs;
-      localStorage.setItem('snb_custom_clubs', JSON.stringify(CLUBS));
-      populateClubDropdowns();
-      if (!CLUBS.some(c => c.id === currentClubId)) {
-        currentClubId = CLUBS[0] ? CLUBS[0].id : 'basketball';
-        localStorage.setItem('snb_active_club', currentClubId);
-      }
-      selectClub(currentClubId);
-      renderAdminSchedulesEditor();
+    const fetchUrl1 = url + (url.includes('?') ? '&' : '?') + 'action=getClubs&t=' + Date.now();
+    const res1 = await fetch(fetchUrl1);
+    const data1 = await res1.json();
+    if (data1 && Array.isArray(data1.clubs) && data1.clubs.length > 0) {
+      applyClubsFromCloud(data1.clubs);
       await refreshDataViews();
       return true;
     }
   } catch(e) {
-    console.warn('Fetch clubs from cloud failed:', e);
+    console.warn('getClubs failed, trying cloud bridge getLogs fallback...');
+  }
+
+  // 2. Cloud Bridge fallback: fetch getLogs and parse SYS-CLUBS-CONFIG
+  try {
+    const fetchUrl2 = url + (url.includes('?') ? '&' : '?') + 'action=getLogs&t=' + Date.now();
+    const res2 = await fetch(fetchUrl2);
+    const data2 = await res2.json();
+    if (data2 && Array.isArray(data2.records)) {
+      const sysRec = data2.records.find(r => (r.id && r.id.startsWith('SYS-CLUBS')) || r.userName === 'SYSTEM_CLUBS_CONFIG');
+      if (sysRec && sysRec.note) {
+        const parsed = JSON.parse(sysRec.note);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          applyClubsFromCloud(parsed);
+          await refreshDataViews();
+          return true;
+        }
+      }
+    }
+  } catch(e) {
+    console.warn('Cloud bridge getLogs fallback failed:', e);
   }
   return false;
 }
@@ -2842,6 +2901,8 @@ function getSelectedClub() {
 
 function isRecordActive(log) {
   if (!log) return false;
+  if (log.id && log.id.startsWith('SYS-')) return false;
+  if (log.userName === 'SYSTEM_CLUBS_CONFIG' || log.clubId === 'system') return false;
   if (log.status === 'completed' || log.status === 'cancelled') return false;
   if (log.checkOutTime && String(log.checkOutTime).trim() !== '') return false;
   return log.status === 'active' || !log.checkOutTime;
@@ -3607,34 +3668,42 @@ async function syncFromCloud(silent = false) {
     const data = await res.json();
 
     let clubsUpdatedFromCloud = false;
-    // Check if cloud response contains customized club configurations
+
+    // Check 1: Dedicated clubs array from upgraded Google Apps Script
     if (data && Array.isArray(data.clubs) && data.clubs.length > 0) {
-      const cloudClubsStr = JSON.stringify(data.clubs);
-      const localClubsStr = JSON.stringify(CLUBS);
-      if (cloudClubsStr !== localClubsStr) {
-        CLUBS = data.clubs;
-        localStorage.setItem('snb_custom_clubs', cloudClubsStr);
-        populateClubDropdowns();
-        if (!CLUBS.some(c => c.id === currentClubId)) {
-          currentClubId = CLUBS[0] ? CLUBS[0].id : 'basketball';
-          localStorage.setItem('snb_active_club', currentClubId);
+      clubsUpdatedFromCloud = applyClubsFromCloud(data.clubs);
+    } 
+    // Check 2: Resilient Cloud Bridge in data.records (works on existing Google Apps Script)
+    else if (data && Array.isArray(data.records) && data.records.length > 0) {
+      const sysRec = data.records.find(r => (r.id && r.id.startsWith('SYS-CLUBS')) || r.userName === 'SYSTEM_CLUBS_CONFIG');
+      if (sysRec && sysRec.note) {
+        try {
+          const parsed = JSON.parse(sysRec.note);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            clubsUpdatedFromCloud = applyClubsFromCloud(parsed);
+          }
+        } catch(e) {
+          console.warn('Failed to parse clubs from sysRec:', e);
         }
-        selectClub(currentClubId);
-        renderAdminSchedulesEditor();
-        clubsUpdatedFromCloud = true;
+      } else if (localStorage.getItem('snb_custom_clubs')) {
+        // If cloud does not have clubs stored yet but this browser has custom clubs, seed cloud automatically
+        syncClubsToCloud(CLUBS);
       }
     } else if (localStorage.getItem('snb_custom_clubs')) {
-      // If cloud does not have clubs stored yet but this browser has custom clubs, seed cloud automatically
       syncClubsToCloud(CLUBS);
     }
 
     if (data && Array.isArray(data.records)) {
-      await appDB.bulkUpsert(data.records);
+      // Filter out system configuration records before storing into IndexedDB logs
+      const actualUserRecords = data.records.filter(r => 
+        !r.id.startsWith('SYS-') && r.userName !== 'SYSTEM_CLUBS_CONFIG' && r.clubId !== 'system'
+      );
+      await appDB.bulkUpsert(actualUserRecords);
       allLogsCache = await appDB.getAllLogs();
       activeLogsCache = allLogsCache.filter(isRecordActive);
       
       if (!silent) {
-        toast(`ซิงก์ข้อมูลจาก Google Sheets สำเร็จ (${data.records.length} รายการ${clubsUpdatedFromCloud ? ' • ซิงก์กำหนดการชมรมแล้ว' : ''}) ✓`);
+        toast(`ซิงก์ข้อมูลจาก Google Sheets สำเร็จ (${actualUserRecords.length} รายการ${clubsUpdatedFromCloud ? ' • ซิงก์กำหนดการชมรมแล้ว' : ''}) ✓`);
       }
 
       if (banner) {
@@ -4032,6 +4101,10 @@ function applyHistoryFilters() {
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
 
   filteredLogs = allLogsCache.filter(log => {
+    // Ignore internal system config records
+    if (log.id && log.id.startsWith('SYS-')) return false;
+    if (log.userName === 'SYSTEM_CLUBS_CONFIG' || log.clubId === 'system') return false;
+
     // Search match
     if (search) {
       const target = `${log.userName} ${log.department} ${log.note || ''} ${log.id}`.toLowerCase();
@@ -4238,6 +4311,8 @@ function renderAdminLogsList() {
 
   const search = (document.getElementById('admin-search-log')?.value || '').toLowerCase().trim();
   const logs = allLogsCache.filter(l => {
+    if (l.id && l.id.startsWith('SYS-')) return false;
+    if (l.userName === 'SYSTEM_CLUBS_CONFIG' || l.clubId === 'system') return false;
     if (!search) return true;
     return `${l.userName} ${l.department} ${l.id} ${l.clubName} ${l.note || ''}`.toLowerCase().includes(search);
   });
@@ -4836,6 +4911,8 @@ async function loadAnalytics() {
 
   // Filter logs by period and club
   const filtered = allLogs.filter(log => {
+    if (log.id && log.id.startsWith('SYS-')) return false;
+    if (log.userName === 'SYSTEM_CLUBS_CONFIG' || log.clubId === 'system') return false;
     if (!log.checkInTime) return false;
     const d = new Date(log.checkInTime);
     if (isNaN(d.getTime())) return false;
