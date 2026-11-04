@@ -430,6 +430,8 @@
     flex-direction: column;
     text-align: left;
     white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .club-tab-name {
@@ -438,28 +440,67 @@
     color: #fff;
     white-space: nowrap;
     line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .club-tab-count {
     font-size: 0.68rem;
     color: var(--text-muted);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  @media (max-width: 640px) {
-    .club-tab-item {
-      padding: 6px 12px;
+  /* Mobile Club Quick Selector - Clean 2-column grid, no side-scroll, no cut-off words */
+  @media (max-width: 899px) {
+    .club-category-container {
+      margin-bottom: 12px;
+    }
+    .section-title-wrap {
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: 0.82rem;
+    }
+    #active-club-summary-text {
+      font-size: 0.72rem !important;
+    }
+    .club-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
       gap: 7px;
-      border-radius: 10px;
+      overflow-x: visible;
+      padding-bottom: 0;
+    }
+    .club-tab-item {
+      flex: initial;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      gap: 8px;
+    }
+    .club-tab-item:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+    .club-tab-item.active {
+      background: var(--club-glow);
+      border-color: var(--club-color);
+      box-shadow: 0 2px 14px var(--club-glow);
+      transform: none;
     }
     .club-tab-icon {
-      font-size: 1.15rem;
+      font-size: 1.3rem;
     }
     .club-tab-name {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
+      line-height: 1.25;
     }
     .club-tab-count {
-      font-size: 0.65rem;
+      font-size: 0.68rem;
+      margin-top: 2px;
     }
   }
 
@@ -515,20 +556,20 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
     border-bottom: 1px solid var(--border-color);
   }
 
   .user-avatar-circle {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #fff;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
@@ -537,11 +578,12 @@
 
   .profile-details {
     flex-grow: 1;
+    min-width: 0;
     overflow: hidden;
   }
 
   .profile-name {
-    font-size: 1.12rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: #fff;
     white-space: nowrap;
@@ -550,12 +592,15 @@
   }
 
   .profile-dept-tag {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #93c5fd;
     display: flex;
     align-items: center;
     gap: 6px;
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .switch-profile-btn {
@@ -563,11 +608,12 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--text-muted);
     font-size: 0.75rem;
-    padding: 6px 10px;
+    padding: 5px 10px;
     border-radius: 8px;
     cursor: pointer;
     font-family: inherit;
     transition: all 0.2s;
+    flex-shrink: 0;
   }
   .switch-profile-btn:hover {
     color: #fff;
@@ -575,71 +621,174 @@
     background: rgba(255, 255, 255, 0.05);
   }
 
-  /* Active Club Banner Card inside check-in */
+  @media (max-width: 899px) {
+    .profile-welcome {
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+    }
+    .user-avatar-circle {
+      width: 38px;
+      height: 38px;
+      font-size: 1.12rem;
+    }
+    .profile-name {
+      font-size: 0.95rem;
+    }
+    .profile-dept-tag {
+      font-size: 0.72rem;
+    }
+    .switch-profile-btn {
+      padding: 4px 8px;
+      font-size: 0.72rem;
+    }
+  }
+
+  /* Active Club Banner Card inside check-in - Unified & Lean */
   .selected-club-banner {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
+    flex-direction: column;
+    padding: 12px 14px;
     border-radius: var(--radius-lg);
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-color);
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .selected-club-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 4px;
+    background: var(--club-color, var(--accent));
+    transition: background 0.3s ease;
+  }
+
+  .selected-club-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
   }
 
   .selected-club-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
   }
 
   .selected-club-icon {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .selected-club-titles {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
   }
 
   .selected-club-name {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.98rem;
+    font-weight: 700;
     color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
   }
 
   .selected-club-zone {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    margin-top: 1px;
+  }
+
+  .selected-club-schedule-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.75rem;
+  }
+
+  .schedule-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #93c5fd;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .selected-club-note-line {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+    line-height: 1.35;
+    word-break: break-word;
   }
 
   /* Digital Clock Display */
   .clock-display-wrap {
     text-align: center;
-    padding: 12px 0 20px;
+    padding: 8px 0 14px;
   }
 
   .digital-time {
-    font-size: 3.4rem;
+    font-size: 2.8rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     line-height: 1;
     color: #fff;
-    text-shadow: 0 0 25px var(--accent-glow);
+    text-shadow: 0 0 20px var(--accent-glow);
     transition: text-shadow 0.5s ease;
   }
 
   .digital-date {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     color: var(--text-muted);
-    margin-top: 8px;
-    letter-spacing: 0.02em;
+    margin-top: 4px;
+    letter-spacing: 0.01em;
+  }
+
+  @media (max-width: 899px) {
+    .clock-display-wrap {
+      padding: 4px 0 10px;
+    }
+    .digital-time {
+      font-size: 2.05rem;
+    }
+    .digital-date {
+      font-size: 0.76rem;
+      margin-top: 2px;
+    }
   }
 
   /* Action Buttons */
   .btn-checkin-action {
     width: 100%;
-    padding: 18px;
+    padding: 16px;
     border-radius: var(--radius-lg);
     border: none;
-    font-size: 1.18rem;
+    font-size: 1.15rem;
     font-weight: 700;
     cursor: pointer;
     font-family: inherit;
@@ -672,13 +821,13 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 4px;
-    padding: 13px 16px;
-    line-height: 1.3;
+    gap: 3px;
+    padding: 12px 14px;
+    line-height: 1.25;
     text-align: center;
   }
   .checkin-btn-sub {
-    font-size: 0.86rem;
+    font-size: 0.84rem;
     font-weight: 600;
     opacity: 0.95;
     display: inline-flex;
@@ -689,7 +838,7 @@
     color: #e6fffa;
   }
   .checkin-btn-main {
-    font-size: 1.24rem;
+    font-size: 1.18rem;
     font-weight: 800;
     display: inline-flex;
     align-items: center;
@@ -719,6 +868,19 @@
   @keyframes checkinPulse {
     0%, 100% { opacity: 0.8; transform: scale(0.95); }
     50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  @media (max-width: 640px) {
+    .btn-checkin-action.btn-checkin-split {
+      padding: 11px 12px;
+      gap: 2px;
+    }
+    .checkin-btn-sub {
+      font-size: 0.78rem;
+    }
+    .checkin-btn-main {
+      font-size: 1.08rem;
+    }
   }
 
   .btn-out {
@@ -1386,11 +1548,14 @@
     font-weight: 700;
   }
 
-  /* Mobile UX Optimization (< 768px) */
-  @media (max-width: 768px) {
+  /* Mobile UX Optimization (< 899px) */
+  @media (max-width: 899px) {
     .glass-card {
       padding: 16px 14px;
       border-radius: 16px;
+    }
+    .app-container {
+      padding: 10px 12px;
     }
     .history-toolbar {
       flex-direction: column;
@@ -1410,19 +1575,56 @@
       font-size: 0.78rem !important;
       padding: 7px 10px !important;
     }
+
+    /* Mobile Lean Flow: Active members first, then quick grid below */
+    #main-layout-right-col {
+      display: flex;
+      flex-direction: column;
+    }
+    #active-members-card {
+      order: 1;
+      margin-top: 0 !important;
+      padding: 14px !important;
+    }
+    #clubs-quick-grid-header {
+      order: 2;
+      margin-top: 14px;
+      margin-bottom: 8px;
+    }
     #clubs-quick-grid {
+      order: 3;
       grid-template-columns: repeat(2, 1fr) !important;
-      gap: 10px !important;
+      gap: 8px !important;
+      margin-bottom: 12px !important;
     }
     .club-card-widget {
-      padding: 12px !important;
+      padding: 10px 12px !important;
+      border-radius: 12px !important;
+    }
+    .club-card-icon {
+      font-size: 1.4rem !important;
     }
     .club-card-title {
-      font-size: 0.88rem !important;
+      font-size: 0.82rem !important;
       margin-bottom: 2px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
     }
     .club-card-desc {
-      font-size: 0.7rem !important;
+      font-size: 0.68rem !important;
+      margin-bottom: 6px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    .club-card-action {
+      font-size: 0.68rem !important;
+      padding-top: 6px !important;
+    }
+
+    .pwa-install-banner, .btn-fullscreen-toggle {
+      display: none !important;
     }
   }
 
@@ -1726,10 +1928,7 @@
     </nav>
 
     <!-- Header Right Live Status -->
-    <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
-      <button type="button" class="btn-fullscreen-toggle" onclick="toggleFullscreen()" title="สลับโหมดเต็มจอ / ซ่อนแถบเบราว์เซอร์">
-        <span>⛶</span> เต็มจอ
-      </button>
+    <div class="header-actions">
       <div class="occupants-pill" onclick="switchMainTab('history')" title="ดูผู้ที่กำลังใช้งานอาคาร">
         <div class="pulse-dot"></div>
         <span>ใช้งาน <strong id="header-active-count">0</strong> คน</span>
@@ -1774,37 +1973,27 @@
           <button class="switch-profile-btn" onclick="openProfileModal()">แก้ไข</button>
         </div>
 
-        <!-- Active Selected Club Box -->
+        <!-- Unified Selected Club & Court Schedule Capsule -->
         <div class="selected-club-banner" id="selected-club-banner">
-          <div class="selected-club-info">
-            <div class="selected-club-icon" id="banner-club-icon">🏀</div>
-            <div>
-              <div class="selected-club-name" id="banner-club-name">ชมรมบาสเก็ตบอล</div>
-              <div class="selected-club-zone" id="banner-club-zone">คอร์ตบาสเก็ตบอลในร่ม</div>
-            </div>
-          </div>
-          <div class="status-tag status-active" id="banner-club-occupants">0 คนในสนาม</div>
-        </div>
-
-        <!-- Selected Club Court Schedule Information (กำหนดการใช้สนาม) -->
-        <div id="banner-club-schedule" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 16px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.15rem;">📅</span>
-              <div>
-                <div style="font-size: 0.72rem; color: var(--text-muted);">กำหนดการเปิดใช้สนาม</div>
-                <div id="banner-schedule-days" style="font-size: 0.85rem; font-weight: 600; color: #93c5fd;">
-                  วันใช้งาน: จันทร์ - ศุกร์
-                </div>
+          <div class="selected-club-top-row">
+            <div class="selected-club-info">
+              <div class="selected-club-icon" id="banner-club-icon">🏀</div>
+              <div class="selected-club-titles">
+                <div class="selected-club-name" id="banner-club-name">ชมรมบาสเก็ตบอล</div>
+                <div class="selected-club-zone" id="banner-club-zone">คอร์ตบาสเก็ตบอลในร่ม</div>
               </div>
             </div>
-            <span class="status-tag status-active" id="banner-schedule-time" style="font-size: 0.75rem; padding: 3px 10px;">
-              ⏰ 16:30 - 20:30 น.
-            </span>
+            <div class="status-tag status-active" id="banner-club-occupants">0 คนในสนาม</div>
           </div>
-          <div id="banner-schedule-note" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);">
-            เปิดไฟส่องสว่าง 17:00 น. กรุณาสวมรองเท้ากีฬา
+          <div class="selected-club-schedule-row" id="banner-club-schedule">
+            <div class="schedule-pill">
+              <span>📅</span> <span id="banner-schedule-days">วันใช้งาน: จันทร์ - ศุกร์</span>
+            </div>
+            <div class="schedule-pill">
+              <span>⏰</span> <span id="banner-schedule-time">เวลา: 16:30 - 20:30 น.</span>
+            </div>
           </div>
+          <div id="banner-schedule-note" class="selected-club-note-line" style="display: none;"></div>
         </div>
 
         <!-- Digital Clock -->
@@ -1819,15 +2008,15 @@
         </div>
 
         <!-- Optional Note Input -->
-        <div class="form-group" style="margin-top: 18px;" id="note-input-container">
-          <label class="form-label">หมายเหตุ / อุปกรณ์ที่ยืม (ถ้ามี)</label>
-          <input type="text" id="checkin-note" class="form-input" placeholder="เช่น ยืมลูกบาส 1 ลูก, ซ้อมเดี่ยว, จองคอร์ต">
+        <div class="form-group" style="margin-top: 14px;" id="note-input-container">
+          <label class="form-label" style="font-size: 0.76rem;">หมายเหตุ / อุปกรณ์ที่ยืม (ถ้ามี)</label>
+          <input type="text" id="checkin-note" class="form-input" style="font-size: 0.88rem; padding: 10px 12px;" placeholder="เช่น ยืมลูกบาส 1 ลูก, ซ้อมเดี่ยว, จองคอร์ต">
         </div>
       </div>
 
       <!-- Right Column: Live Club Status Overview & Fast Switch -->
-      <div>
-        <div class="section-title-wrap" style="margin-bottom: 12px;">
+      <div id="main-layout-right-col">
+        <div class="section-title-wrap" style="margin-bottom: 12px;" id="clubs-quick-grid-header">
           <div class="section-title">
             <span>🏟️</span> สถานะแต่ละชมรมในอาคารขณะนี้
           </div>
@@ -1841,7 +2030,7 @@
         </div>
 
         <!-- Live Active Members inside Building List -->
-        <div class="glass-card" style="padding: 18px; margin-top: 10px;">
+        <div class="glass-card" style="padding: 18px; margin-top: 10px;" id="active-members-card">
           <div class="card-header-bar" style="margin-bottom: 12px;">
             <div class="section-title" style="color: #fff; text-transform: none;">
               <span>👥</span> ผู้ที่กำลังใช้งานอาคารอยู่ในขณะนี้
@@ -2315,7 +2504,7 @@
     <div class="bottom-nav-icon-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 4h12v6a6 6 0 0 1-12 0V4z"/></svg>
     </div>
-    <span>สถานะชมรม</span>
+    <span>ชมรม</span>
   </button>
   <button class="bottom-nav-item" data-tab="history" onclick="switchMainTab('history')">
     <div class="bottom-nav-icon-wrap">
@@ -2996,17 +3185,7 @@ function updateBannerClubSchedule() {
   const noteEl = document.getElementById('banner-schedule-note');
 
   if (daysEl) daysEl.textContent = `วันใช้งาน: ${opStatus.daysText}`;
-  if (timeEl) {
-    let pillHtml = '';
-    if (opStatus.statusCode === 'ready') {
-      pillHtml = `<span style="margin-left: 6px; font-size: 0.68rem; font-weight: 700; background: rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">🟢 พร้อมใช้งาน</span>`;
-    } else if (opStatus.statusCode === 'outside_hours') {
-      pillHtml = `<span style="margin-left: 6px; font-size: 0.68rem; font-weight: 700; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4);">🟡 นอกเวลา</span>`;
-    } else {
-      pillHtml = `<span style="margin-left: 6px; font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.4);">🔴 ปิดทำการ</span>`;
-    }
-    timeEl.innerHTML = `⏰ ${opStatus.timeText} ${pillHtml}`;
-  }
+  if (timeEl) timeEl.textContent = `เวลา: ${opStatus.timeText} น.`;
   if (noteEl) {
     if (club.note) {
       noteEl.style.display = 'block';
@@ -3209,25 +3388,25 @@ function updateBannerClubOccupants() {
 
   if (activeInClub > 0) {
     bOcc.className = 'status-tag status-active';
-    bOcc.innerHTML = `🟢 ${activeInClub} คนในสนาม`;
+    bOcc.innerHTML = `🟢 เล่น ${activeInClub} คน`;
     bOcc.style.background = 'rgba(16, 185, 129, 0.2)';
     bOcc.style.color = '#34d399';
     bOcc.style.borderColor = 'rgba(16, 185, 129, 0.4)';
   } else if (opStatus.isOpenNow) {
     bOcc.className = 'status-tag status-active';
-    bOcc.innerHTML = `🟢 พร้อมใช้งาน (ว่าง 0 คน)`;
+    bOcc.innerHTML = `🟢 พร้อมใช้ (0 คน)`;
     bOcc.style.background = 'rgba(16, 185, 129, 0.15)';
     bOcc.style.color = '#34d399';
     bOcc.style.borderColor = 'rgba(16, 185, 129, 0.35)';
   } else if (!opStatus.isOpenToday) {
     bOcc.className = 'status-tag';
-    bOcc.innerHTML = `🔴 ปิดทำการวันนี้ (เปิด: ${opStatus.daysText})`;
+    bOcc.innerHTML = `🔴 ปิดวันนี้`;
     bOcc.style.background = 'rgba(239, 68, 68, 0.15)';
     bOcc.style.color = '#f87171';
     bOcc.style.borderColor = 'rgba(239, 68, 68, 0.35)';
   } else {
     bOcc.className = 'status-tag';
-    bOcc.innerHTML = `🟡 นอกเวลาทำการ (${opStatus.reason})`;
+    bOcc.innerHTML = `🟡 นอกเวลา`;
     bOcc.style.background = 'rgba(245, 158, 11, 0.15)';
     bOcc.style.color = '#fbbf24';
     bOcc.style.borderColor = 'rgba(245, 158, 11, 0.35)';
@@ -3505,7 +3684,7 @@ function selectClub(clubId) {
   updateCanvasTheme(club);
 
   const activeTabEl = document.querySelector(`.club-tab-item[data-club="${clubId}"]`);
-  if (activeTabEl) {
+  if (activeTabEl && window.innerWidth >= 900) {
     activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 }
@@ -4530,19 +4709,19 @@ function renderActiveMembersList() {
     const club = CLUBS.find(c => c.id === log.clubId || c.name === log.clubName) || { icon: '🏢', name: log.clubName || 'อาคารทั่วไป' };
     const checkInTime = log.checkInTime ? new Date(log.checkInTime) : new Date();
     return `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05);">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div class="history-avatar-circle" style="width: 34px; height: 34px; font-size: 1.15rem; background: linear-gradient(135deg, #0ea5e9, #2563eb);">${getUserAvatar(log)}</div>
-          <div>
-            <div style="font-weight: 600; font-size: 0.88rem; color: #fff;">${escapeHtml(log.userName)}</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(log.department)} • เข้าเมื่อ ${formatThaiTime(checkInTime)}</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1 1 auto; overflow: hidden;">
+          <div class="history-avatar-circle" style="width: 32px; height: 32px; font-size: 1.05rem; background: linear-gradient(135deg, #0ea5e9, #2563eb); flex-shrink: 0;">${getUserAvatar(log)}</div>
+          <div style="min-width: 0; flex: 1 1 auto; overflow: hidden;">
+            <div style="font-weight: 600; font-size: 0.85rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(log.userName)}</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(log.department)} • เข้า ${formatThaiTime(checkInTime)}</div>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="badge-club-tag" style="background: rgba(255,255,255,0.08); color: #fff;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+          <span class="badge-club-tag" style="background: rgba(255,255,255,0.08); color: #fff; font-size: 0.72rem; padding: 2px 7px; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             ${club.icon} ${escapeHtml(club.name)}
           </span>
-          <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.7rem; color: #f87171;" onclick="forceCheckOutLog('${log.id}')" title="เช็คเอาต์แทน">
+          <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.7rem; color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="forceCheckOutLog('${log.id}')" title="เช็คเอาต์แทน">
             ออก
           </button>
         </div>
@@ -6136,16 +6315,7 @@ function isStandaloneMode() {
 }
 
 function checkAndShowPWABanner() {
-  if (isStandaloneMode()) return;
-  const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
-  if (!isMobile) return;
-
-  const dismissedTime = localStorage.getItem('snb_pwa_banner_dismissed');
-  if (dismissedTime && (Date.now() - Number(dismissedTime)) < 24 * 3600 * 1000) {
-    return;
-  }
-  const banner = document.getElementById('pwa-install-banner');
-  if (banner) banner.style.display = 'flex';
+  return;
 }
 
 function dismissPWABanner() {
